@@ -1,17 +1,111 @@
-# levelup_app
+# 🚀 LevelUp App
 
-A new Flutter project.
+LevelUp is a gamified productivity and self-improvement mobile application built with Flutter.  
+The app helps users stay productive by turning daily tasks into an RPG-style leveling system with XP, streaks, moods, achievements, and calendar tracking.
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+# ✨ Features
 
-A few resources to get you started if this is your first Flutter project:
+## 📝 Daily Task Management
+- Add tasks for the day
+- Mark tasks as completed
+- Tasks support:
+  - Difficulty levels
+  - XP points
+  - Completion tracking
+  - Completion timestamps
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+---
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 🎮 Gamification System
+- Gain XP for completing tasks
+- Automatic leveling system
+- Daily streak tracking
+- Longest streak tracking
+- Mood detection based on task completion
+- Confetti celebration on completing all tasks
+
+---
+
+## 📅 Mood Calendar
+- Interactive calendar UI
+- View productivity history for each day
+- Mood visualization:
+  - Great 😄
+  - Good 🙂
+  - Neutral 😐
+  - Sad 😞
+- Streak day highlights
+- Day-wise analytics popup
+
+---
+
+## 📊 Daily Analytics
+Each completed day stores:
+- Total tasks
+- Completed tasks
+- Completion percentage
+- XP earned
+- Mood
+- Full task list
+- Completed/Incomplete task states
+
+---
+
+## 💾 Local Database
+The app uses **Drift (SQLite)** for persistent local storage.
+
+### Stored Data
+- Tasks
+- Day summaries
+- XP progress
+- Levels
+- Streaks
+- Task completion history
+
+---
+
+# 🛠️ Tech Stack
+
+## Frontend
+- Flutter
+- Dart
+
+## State Management
+- Riverpod
+
+## Local Database
+- Drift (SQLite)
+
+## Animations
+- Lottie Animations
+
+---
+
+# 📂 Project Structure
+
+```bash
+lib/
+│
+├── database/
+│   ├── app_database.dart
+│
+├── providers/
+│   ├── task_provider.dart
+│   ├── user_provider.dart
+│   ├── database_provider.dart
+│
+├── screens/
+│   ├── splash_screen.dart
+│   ├── home_screen.dart
+│   ├── calendar_screen.dart
+│   ├── add_task_screen.dart
+│
+├── widgets/
+│   ├── top_bar.dart
+│   ├── app_drawer.dart
+│
+├── services/
+│
+└── main.dart
