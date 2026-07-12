@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:levelup_app/widgets/app_drawer.dart';
 import 'package:lottie/lottie.dart';
 
+import '../models/task_difficulty.dart';
 import '../providers/task_provider.dart';
-import '../widgets/top_bar.dart';
+import '../utils/task_utils.dart';
+import '../widgets/common/app_drawer.dart';
+import '../widgets/common/top_bar.dart';
+import '../widgets/common/difficulty_chips.dart';
+import '../extensions/task_extension.dart';
+import '../core/app_text.dart';
 
 class AddTaskScreen extends ConsumerStatefulWidget {
   const AddTaskScreen({super.key});
@@ -16,19 +21,24 @@ class AddTaskScreen extends ConsumerStatefulWidget {
 
 class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
   final TextEditingController taskController = TextEditingController();
-  final TextEditingController pointsController = TextEditingController();
 
   bool showSuccess = false;
 
-  /// 🧠 Prevent haptic spam
+  TaskDifficulty selectedDifficulty = TaskDifficulty.moderate;
+
   final Set<int> triggeredHaptics = {};
 
   Future<void> addTask() async {
-    final text = taskController.text.trim();
-    if (text.isEmpty) return;
-    final points = int.tryParse(pointsController.text) ?? 10;
+    final title = taskController.text.trim();
 
-    ref.read(taskProvider.notifier).addTask(text, points: points);
+    if (title.isEmpty) return;
+
+    await ref
+        .read(taskProvider.notifier)
+        .addTask(
+          title,
+          difficulty: TaskUtils.toStringValue(selectedDifficulty),
+        );
 
     setState(() {
       showSuccess = true;
@@ -36,198 +46,368 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
 
     await Future.delayed(const Duration(seconds: 2));
 
+    if (!mounted) return;
+
     setState(() {
       showSuccess = false;
       taskController.clear();
-      pointsController.clear();
+      selectedDifficulty = TaskDifficulty.moderate;
     });
+  }
+
+  @override
+  void dispose() {
+    taskController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final tasks = ref.watch(taskProvider);
 
+    final rewardXP = TaskUtils.getXP(selectedDifficulty);
+
     return Scaffold(
       appBar: const TopBar(),
       drawer: const AppDrawer(),
 
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
+
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+
           children: [
-            /// 🔤 Input Row
+            /// PAGE TITLE
+            Text(
+              "Create Mission 🚀",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+
+            const SizedBox(height: 6),
+
+            Text(
+              "Every mission completed makes you stronger.",
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+
+            const SizedBox(height: 15),
+
+            /// TASK NAME + ADD BUTTON
             Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: taskController,
-                    decoration: const InputDecoration(
-                      hintText: "Enter task",
-                      border: OutlineInputBorder(),
+                    textCapitalization: TextCapitalization.sentences,
+                    onSubmitted: (_) => addTask(),
+                    decoration: InputDecoration(
+                      hintText: "Mission name",
+                      prefixIcon: const Icon(Icons.flag),
+                      filled: true,
+                      fillColor: Colors.deepPurple.shade100,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                   ),
                 ),
 
                 const SizedBox(width: 10),
 
-                /// ➕ / 🎬 Lottie Button
                 SizedBox(
-                  height: 56,
-                  width: 56,
+                  width: 60,
+                  height: 52,
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
                     child: showSuccess
                         ? ClipRRect(
-                            key: const ValueKey("lottie"),
-                            borderRadius: BorderRadius.circular(8),
+                            key: const ValueKey("success"),
+                            borderRadius: BorderRadius.circular(18),
                             child: Lottie.asset(
-                              "assets/success.json",
+                              "assets/animations/success.json",
                               repeat: false,
                             ),
                           )
                         : ElevatedButton(
                             key: const ValueKey("button"),
-                            onPressed: showSuccess ? null : addTask,
+                            onPressed: addTask,
                             style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.deepPurple,
+                              foregroundColor: Colors.white,
+                              elevation: 3,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(18),
+                              ),
                               padding: EdgeInsets.zero,
                             ),
-                            child: const Icon(Icons.add),
+                            child: const Icon(Icons.add_rounded, size: 20),
                           ),
                   ),
                 ),
               ],
             ),
 
+            const SizedBox(height: 16),
+
+            const Text(
+              "Difficulty",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+
             const SizedBox(height: 10),
 
-            /// 🔢 Points Input
-            Align(
-              alignment: Alignment.centerLeft,
-              child: SizedBox(
-                width: 120,
-                child: TextField(
-                  controller: pointsController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    hintText: "Points",
-                    border: OutlineInputBorder(),
+            /// CHOICE CHIPS
+            Row(
+              children: TaskDifficulty.values.map((difficulty) {
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: ChoiceChip(
+                      label: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          "${TaskUtils.getEmoji(difficulty)} ${TaskUtils.getLabel(difficulty)}",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      selected: selectedDifficulty == difficulty,
+                      onSelected: (_) {
+                        HapticFeedback.selectionClick();
+
+                        setState(() {
+                          selectedDifficulty = difficulty;
+                        });
+                      },
+                    ),
                   ),
-                ),
+                );
+              }).toList(),
+            ),
+
+            const SizedBox(height: 16),
+
+            /// XP CARD
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+
+              width: double.infinity,
+
+              padding: const EdgeInsets.all(10),
+
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50,
+
+                borderRadius: BorderRadius.circular(18),
+
+                border: Border.all(color: Colors.amber.shade300),
+              ),
+
+              child: Row(
+                children: [
+                  const Icon(Icons.stars, color: Colors.orange, size: 40),
+
+                  const SizedBox(width: 15),
+
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+
+                    children: [
+                      const Text(
+                        "Mission Reward",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+
+                      Text(
+                        "+$rewardXP XP",
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontStyle: FontStyle.italic,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 15),
 
-            /// 📋 Title + hint
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                "Today's Tasks",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
+            const Text(
+              "Today's Missions",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
 
-            const SizedBox(height: 4),
-
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                "Swipe left to delete",
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
+            Text(
+              "Swipe left to delete a mission",
+              style: TextStyle(color: Colors.grey.shade600),
             ),
 
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
 
-            /// 📋 Task List / Empty State
             Expanded(
               child: tasks.isEmpty
                   ? Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(20),
                       ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            height: 140,
-                            child: Lottie.asset(
-                              "assets/empty.json",
-                              repeat: true,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                  height: constraints.maxHeight * 0.55,
+                                  child: Lottie.asset(
+                                    "assets/animations/empty.json",
+                                    repeat: true,
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(height: 10),
-                          const Text(
-                            "It feels empty 😕",
-                            style: TextStyle(color: Colors.grey, fontSize: 16),
-                          ),
-                        ],
+                          );
+                        },
                       ),
                     )
-                  : ListView.builder(
+                  : ListView.separated(
+                      physics: const BouncingScrollPhysics(),
+
                       itemCount: tasks.length,
+
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+
                       itemBuilder: (context, index) {
                         final task = tasks[index];
 
                         return Dismissible(
-                          key: ValueKey(task.title + index.toString()),
+                          key: ValueKey(task.id),
+
                           direction: DismissDirection.endToStart,
 
-                          /// 🎬 Background animation while swiping
                           background: Container(
                             alignment: Alignment.centerRight,
+
                             padding: const EdgeInsets.only(right: 20),
-                            color: Colors.red.shade100,
+
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade100,
+                              borderRadius: BorderRadius.circular(22),
+                            ),
+
                             child: SizedBox(
-                              height: 50,
+                              height: 55,
                               child: Lottie.asset(
-                                "assets/delete.json",
+                                "assets/animations/delete.json",
                                 repeat: false,
                               ),
                             ),
                           ),
 
-                          /// 👆 Light haptic on swipe start
                           onUpdate: (details) {
-                            if (details.progress > 0.2 &&
-                                !triggeredHaptics.contains(index)) {
-                              triggeredHaptics.add(index);
+                            if (details.progress > .20 &&
+                                !triggeredHaptics.contains(task.id)) {
+                              triggeredHaptics.add(task.id);
+
                               HapticFeedback.lightImpact();
                             }
                           },
 
-                          /// 💥 Strong haptic on delete
                           onDismissed: (_) {
-                            triggeredHaptics.remove(index);
+                            triggeredHaptics.remove(task.id);
+
                             HapticFeedback.mediumImpact();
 
-                            ref.read(taskProvider.notifier).deleteTask(index);
+                            ref
+                                .read(taskProvider.notifier)
+                                .deleteTaskById(task.id);
                           },
 
-                          child: CheckboxListTile(
-                            value: task.isCompleted,
-                            title: Text(
-                              task.title,
-                              style: TextStyle(
-                                decoration: task.isCompleted
-                                    ? TextDecoration.lineThrough
-                                    : null,
-                              ),
+                          child: Card(
+                            elevation: 2,
+
+                            shadowColor: Colors.black12,
+
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
                             ),
 
-                            secondary: const Icon(Icons.task_alt),
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 18,
+                                vertical: 12,
+                              ),
 
-                            onChanged: (_) {
-                              ref.read(taskProvider.notifier).toggleTask(index);
-                            },
+                              leading: CircleAvatar(
+                                backgroundColor: Colors.deepPurple.shade50,
 
-                            /// optional styling
-                            tileColor: task.isCompleted
-                                ? Colors.green.shade50
-                                : null,
+                                child: Icon(
+                                  Icons.flag,
+                                  color: Colors.deepPurple.shade700,
+                                ),
+                              ),
+
+                              title: Text(
+                                task.title,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+
+                                  decoration: task.isCompleted
+                                      ? TextDecoration.lineThrough
+                                      : null,
+                                ),
+                              ),
+
+                              subtitle: Padding(
+                                padding: const EdgeInsets.only(top: 10),
+
+                                child: Row(
+                                  children: [
+                                    DifficultyChip(
+                                      difficulty: task.difficultyEnum,
+                                    ),
+
+                                    const SizedBox(width: 10),
+
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 5,
+                                      ),
+
+                                      decoration: BoxDecoration(
+                                        color: Colors.amber.shade100,
+                                        borderRadius: BorderRadius.circular(30),
+                                      ),
+
+                                      child: Text(
+                                        "⭐ +${task.xp}",
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+
+                                    const Spacer(),
+
+                                    if (task.isCompleted)
+                                      const Icon(
+                                        Icons.check_circle,
+                                        color: Colors.green,
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
                         );
                       },

@@ -318,13 +318,6 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
       defaultConstraints: GeneratedColumn.constraintIsAlways(
           'CHECK ("is_completed" IN (0, 1))'),
       defaultValue: const Constant(false));
-  static const VerificationMeta _pointsMeta = const VerificationMeta('points');
-  @override
-  late final GeneratedColumn<int> points = GeneratedColumn<int>(
-      'points', aliasedName, false,
-      type: DriftSqlType.int,
-      requiredDuringInsert: false,
-      defaultValue: const Constant(10));
   static const VerificationMeta _difficultyMeta =
       const VerificationMeta('difficulty');
   @override
@@ -332,7 +325,13 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
       'difficulty', aliasedName, false,
       type: DriftSqlType.string,
       requiredDuringInsert: false,
-      defaultValue: const Constant('medium'));
+      defaultValue: const Constant('moderate'));
+  static const VerificationMeta _reflectionMeta =
+      const VerificationMeta('reflection');
+  @override
+  late final GeneratedColumn<String> reflection = GeneratedColumn<String>(
+      'reflection', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
@@ -365,8 +364,8 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
         id,
         title,
         isCompleted,
-        points,
         difficulty,
+        reflection,
         createdAt,
         appDay,
         completedAt,
@@ -397,15 +396,17 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
           isCompleted.isAcceptableOrUnknown(
               data['is_completed']!, _isCompletedMeta));
     }
-    if (data.containsKey('points')) {
-      context.handle(_pointsMeta,
-          points.isAcceptableOrUnknown(data['points']!, _pointsMeta));
-    }
     if (data.containsKey('difficulty')) {
       context.handle(
           _difficultyMeta,
           difficulty.isAcceptableOrUnknown(
               data['difficulty']!, _difficultyMeta));
+    }
+    if (data.containsKey('reflection')) {
+      context.handle(
+          _reflectionMeta,
+          reflection.isAcceptableOrUnknown(
+              data['reflection']!, _reflectionMeta));
     }
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
@@ -444,10 +445,10 @@ class $TasksTable extends Tasks with TableInfo<$TasksTable, Task> {
           .read(DriftSqlType.string, data['${effectivePrefix}title'])!,
       isCompleted: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_completed'])!,
-      points: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}points'])!,
       difficulty: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}difficulty'])!,
+      reflection: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}reflection']),
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
       appDay: attachedDatabase.typeMapping
@@ -469,8 +470,8 @@ class Task extends DataClass implements Insertable<Task> {
   final int id;
   final String title;
   final bool isCompleted;
-  final int points;
   final String difficulty;
+  final String? reflection;
   final DateTime createdAt;
   final DateTime appDay;
   final DateTime? completedAt;
@@ -479,8 +480,8 @@ class Task extends DataClass implements Insertable<Task> {
       {required this.id,
       required this.title,
       required this.isCompleted,
-      required this.points,
       required this.difficulty,
+      this.reflection,
       required this.createdAt,
       required this.appDay,
       this.completedAt,
@@ -491,8 +492,10 @@ class Task extends DataClass implements Insertable<Task> {
     map['id'] = Variable<int>(id);
     map['title'] = Variable<String>(title);
     map['is_completed'] = Variable<bool>(isCompleted);
-    map['points'] = Variable<int>(points);
     map['difficulty'] = Variable<String>(difficulty);
+    if (!nullToAbsent || reflection != null) {
+      map['reflection'] = Variable<String>(reflection);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['app_day'] = Variable<DateTime>(appDay);
     if (!nullToAbsent || completedAt != null) {
@@ -507,8 +510,10 @@ class Task extends DataClass implements Insertable<Task> {
       id: Value(id),
       title: Value(title),
       isCompleted: Value(isCompleted),
-      points: Value(points),
       difficulty: Value(difficulty),
+      reflection: reflection == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reflection),
       createdAt: Value(createdAt),
       appDay: Value(appDay),
       completedAt: completedAt == null && nullToAbsent
@@ -525,8 +530,8 @@ class Task extends DataClass implements Insertable<Task> {
       id: serializer.fromJson<int>(json['id']),
       title: serializer.fromJson<String>(json['title']),
       isCompleted: serializer.fromJson<bool>(json['isCompleted']),
-      points: serializer.fromJson<int>(json['points']),
       difficulty: serializer.fromJson<String>(json['difficulty']),
+      reflection: serializer.fromJson<String?>(json['reflection']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       appDay: serializer.fromJson<DateTime>(json['appDay']),
       completedAt: serializer.fromJson<DateTime?>(json['completedAt']),
@@ -540,8 +545,8 @@ class Task extends DataClass implements Insertable<Task> {
       'id': serializer.toJson<int>(id),
       'title': serializer.toJson<String>(title),
       'isCompleted': serializer.toJson<bool>(isCompleted),
-      'points': serializer.toJson<int>(points),
       'difficulty': serializer.toJson<String>(difficulty),
+      'reflection': serializer.toJson<String?>(reflection),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'appDay': serializer.toJson<DateTime>(appDay),
       'completedAt': serializer.toJson<DateTime?>(completedAt),
@@ -553,8 +558,8 @@ class Task extends DataClass implements Insertable<Task> {
           {int? id,
           String? title,
           bool? isCompleted,
-          int? points,
           String? difficulty,
+          Value<String?> reflection = const Value.absent(),
           DateTime? createdAt,
           DateTime? appDay,
           Value<DateTime?> completedAt = const Value.absent(),
@@ -563,8 +568,8 @@ class Task extends DataClass implements Insertable<Task> {
         id: id ?? this.id,
         title: title ?? this.title,
         isCompleted: isCompleted ?? this.isCompleted,
-        points: points ?? this.points,
         difficulty: difficulty ?? this.difficulty,
+        reflection: reflection.present ? reflection.value : this.reflection,
         createdAt: createdAt ?? this.createdAt,
         appDay: appDay ?? this.appDay,
         completedAt: completedAt.present ? completedAt.value : this.completedAt,
@@ -576,9 +581,10 @@ class Task extends DataClass implements Insertable<Task> {
       title: data.title.present ? data.title.value : this.title,
       isCompleted:
           data.isCompleted.present ? data.isCompleted.value : this.isCompleted,
-      points: data.points.present ? data.points.value : this.points,
       difficulty:
           data.difficulty.present ? data.difficulty.value : this.difficulty,
+      reflection:
+          data.reflection.present ? data.reflection.value : this.reflection,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       appDay: data.appDay.present ? data.appDay.value : this.appDay,
       completedAt:
@@ -593,8 +599,8 @@ class Task extends DataClass implements Insertable<Task> {
           ..write('id: $id, ')
           ..write('title: $title, ')
           ..write('isCompleted: $isCompleted, ')
-          ..write('points: $points, ')
           ..write('difficulty: $difficulty, ')
+          ..write('reflection: $reflection, ')
           ..write('createdAt: $createdAt, ')
           ..write('appDay: $appDay, ')
           ..write('completedAt: $completedAt, ')
@@ -604,8 +610,8 @@ class Task extends DataClass implements Insertable<Task> {
   }
 
   @override
-  int get hashCode => Object.hash(id, title, isCompleted, points, difficulty,
-      createdAt, appDay, completedAt, xpClaimed);
+  int get hashCode => Object.hash(id, title, isCompleted, difficulty,
+      reflection, createdAt, appDay, completedAt, xpClaimed);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -613,8 +619,8 @@ class Task extends DataClass implements Insertable<Task> {
           other.id == this.id &&
           other.title == this.title &&
           other.isCompleted == this.isCompleted &&
-          other.points == this.points &&
           other.difficulty == this.difficulty &&
+          other.reflection == this.reflection &&
           other.createdAt == this.createdAt &&
           other.appDay == this.appDay &&
           other.completedAt == this.completedAt &&
@@ -625,8 +631,8 @@ class TasksCompanion extends UpdateCompanion<Task> {
   final Value<int> id;
   final Value<String> title;
   final Value<bool> isCompleted;
-  final Value<int> points;
   final Value<String> difficulty;
+  final Value<String?> reflection;
   final Value<DateTime> createdAt;
   final Value<DateTime> appDay;
   final Value<DateTime?> completedAt;
@@ -635,8 +641,8 @@ class TasksCompanion extends UpdateCompanion<Task> {
     this.id = const Value.absent(),
     this.title = const Value.absent(),
     this.isCompleted = const Value.absent(),
-    this.points = const Value.absent(),
     this.difficulty = const Value.absent(),
+    this.reflection = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.appDay = const Value.absent(),
     this.completedAt = const Value.absent(),
@@ -646,8 +652,8 @@ class TasksCompanion extends UpdateCompanion<Task> {
     this.id = const Value.absent(),
     required String title,
     this.isCompleted = const Value.absent(),
-    this.points = const Value.absent(),
     this.difficulty = const Value.absent(),
+    this.reflection = const Value.absent(),
     required DateTime createdAt,
     required DateTime appDay,
     this.completedAt = const Value.absent(),
@@ -659,8 +665,8 @@ class TasksCompanion extends UpdateCompanion<Task> {
     Expression<int>? id,
     Expression<String>? title,
     Expression<bool>? isCompleted,
-    Expression<int>? points,
     Expression<String>? difficulty,
+    Expression<String>? reflection,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? appDay,
     Expression<DateTime>? completedAt,
@@ -670,8 +676,8 @@ class TasksCompanion extends UpdateCompanion<Task> {
       if (id != null) 'id': id,
       if (title != null) 'title': title,
       if (isCompleted != null) 'is_completed': isCompleted,
-      if (points != null) 'points': points,
       if (difficulty != null) 'difficulty': difficulty,
+      if (reflection != null) 'reflection': reflection,
       if (createdAt != null) 'created_at': createdAt,
       if (appDay != null) 'app_day': appDay,
       if (completedAt != null) 'completed_at': completedAt,
@@ -683,8 +689,8 @@ class TasksCompanion extends UpdateCompanion<Task> {
       {Value<int>? id,
       Value<String>? title,
       Value<bool>? isCompleted,
-      Value<int>? points,
       Value<String>? difficulty,
+      Value<String?>? reflection,
       Value<DateTime>? createdAt,
       Value<DateTime>? appDay,
       Value<DateTime?>? completedAt,
@@ -693,8 +699,8 @@ class TasksCompanion extends UpdateCompanion<Task> {
       id: id ?? this.id,
       title: title ?? this.title,
       isCompleted: isCompleted ?? this.isCompleted,
-      points: points ?? this.points,
       difficulty: difficulty ?? this.difficulty,
+      reflection: reflection ?? this.reflection,
       createdAt: createdAt ?? this.createdAt,
       appDay: appDay ?? this.appDay,
       completedAt: completedAt ?? this.completedAt,
@@ -714,11 +720,11 @@ class TasksCompanion extends UpdateCompanion<Task> {
     if (isCompleted.present) {
       map['is_completed'] = Variable<bool>(isCompleted.value);
     }
-    if (points.present) {
-      map['points'] = Variable<int>(points.value);
-    }
     if (difficulty.present) {
       map['difficulty'] = Variable<String>(difficulty.value);
+    }
+    if (reflection.present) {
+      map['reflection'] = Variable<String>(reflection.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
@@ -741,8 +747,8 @@ class TasksCompanion extends UpdateCompanion<Task> {
           ..write('id: $id, ')
           ..write('title: $title, ')
           ..write('isCompleted: $isCompleted, ')
-          ..write('points: $points, ')
           ..write('difficulty: $difficulty, ')
+          ..write('reflection: $reflection, ')
           ..write('createdAt: $createdAt, ')
           ..write('appDay: $appDay, ')
           ..write('completedAt: $completedAt, ')
@@ -1358,8 +1364,8 @@ typedef $$TasksTableCreateCompanionBuilder = TasksCompanion Function({
   Value<int> id,
   required String title,
   Value<bool> isCompleted,
-  Value<int> points,
   Value<String> difficulty,
+  Value<String?> reflection,
   required DateTime createdAt,
   required DateTime appDay,
   Value<DateTime?> completedAt,
@@ -1369,8 +1375,8 @@ typedef $$TasksTableUpdateCompanionBuilder = TasksCompanion Function({
   Value<int> id,
   Value<String> title,
   Value<bool> isCompleted,
-  Value<int> points,
   Value<String> difficulty,
+  Value<String?> reflection,
   Value<DateTime> createdAt,
   Value<DateTime> appDay,
   Value<DateTime?> completedAt,
@@ -1394,11 +1400,11 @@ class $$TasksTableFilterComposer extends Composer<_$AppDatabase, $TasksTable> {
   ColumnFilters<bool> get isCompleted => $composableBuilder(
       column: $table.isCompleted, builder: (column) => ColumnFilters(column));
 
-  ColumnFilters<int> get points => $composableBuilder(
-      column: $table.points, builder: (column) => ColumnFilters(column));
-
   ColumnFilters<String> get difficulty => $composableBuilder(
       column: $table.difficulty, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get reflection => $composableBuilder(
+      column: $table.reflection, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
@@ -1431,11 +1437,11 @@ class $$TasksTableOrderingComposer
   ColumnOrderings<bool> get isCompleted => $composableBuilder(
       column: $table.isCompleted, builder: (column) => ColumnOrderings(column));
 
-  ColumnOrderings<int> get points => $composableBuilder(
-      column: $table.points, builder: (column) => ColumnOrderings(column));
-
   ColumnOrderings<String> get difficulty => $composableBuilder(
       column: $table.difficulty, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get reflection => $composableBuilder(
+      column: $table.reflection, builder: (column) => ColumnOrderings(column));
 
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnOrderings(column));
@@ -1468,11 +1474,11 @@ class $$TasksTableAnnotationComposer
   GeneratedColumn<bool> get isCompleted => $composableBuilder(
       column: $table.isCompleted, builder: (column) => column);
 
-  GeneratedColumn<int> get points =>
-      $composableBuilder(column: $table.points, builder: (column) => column);
-
   GeneratedColumn<String> get difficulty => $composableBuilder(
       column: $table.difficulty, builder: (column) => column);
+
+  GeneratedColumn<String> get reflection => $composableBuilder(
+      column: $table.reflection, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -1513,8 +1519,8 @@ class $$TasksTableTableManager extends RootTableManager<
             Value<int> id = const Value.absent(),
             Value<String> title = const Value.absent(),
             Value<bool> isCompleted = const Value.absent(),
-            Value<int> points = const Value.absent(),
             Value<String> difficulty = const Value.absent(),
+            Value<String?> reflection = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> appDay = const Value.absent(),
             Value<DateTime?> completedAt = const Value.absent(),
@@ -1524,8 +1530,8 @@ class $$TasksTableTableManager extends RootTableManager<
             id: id,
             title: title,
             isCompleted: isCompleted,
-            points: points,
             difficulty: difficulty,
+            reflection: reflection,
             createdAt: createdAt,
             appDay: appDay,
             completedAt: completedAt,
@@ -1535,8 +1541,8 @@ class $$TasksTableTableManager extends RootTableManager<
             Value<int> id = const Value.absent(),
             required String title,
             Value<bool> isCompleted = const Value.absent(),
-            Value<int> points = const Value.absent(),
             Value<String> difficulty = const Value.absent(),
+            Value<String?> reflection = const Value.absent(),
             required DateTime createdAt,
             required DateTime appDay,
             Value<DateTime?> completedAt = const Value.absent(),
@@ -1546,8 +1552,8 @@ class $$TasksTableTableManager extends RootTableManager<
             id: id,
             title: title,
             isCompleted: isCompleted,
-            points: points,
             difficulty: difficulty,
+            reflection: reflection,
             createdAt: createdAt,
             appDay: appDay,
             completedAt: completedAt,

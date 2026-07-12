@@ -33,19 +33,20 @@ dependencies:
 
   flutter_riverpod: ^2.6.1
   lottie: ^3.1.0
-
-  hive: ^2.2.3
-  hive_flutter: ^1.1.0
-
+  flutter_dotenv: ^5.2.1
+  supabase_flutter: ^2.9.1
   cupertino_icons: ^1.0.8
   drift: ^2.17.0
   sqlite3_flutter_libs: ^0.5.24
   path_provider: ^2.1.2
   path: ^1.9.0
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  rename_app: ^1.5.0
+  flutter_launcher_icons: ^0.14.3
 
   flutter_lints: ^6.0.0
 
@@ -53,18 +54,21 @@ dev_dependencies:
   hive_generator: ^2.0.1
   drift_dev: ^2.17.0
 
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icons/icon.png"
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
 flutter:
   assets:
-    - assets/success.json
-    - assets/empty.json
-    - assets/Delete.json
-    - assets/confetti.json
-    - assets/streak.json
-    - assets/rocket.json
+    - assets/animations/
+    - assets/cat_moods/
+    - assets/icons/
+    - .env
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

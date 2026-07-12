@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../screens/home_screen.dart';
-import '../screens/add_task_screen.dart';
-import '../screens/calendar_screen.dart';
+import '../../screens/home_screen.dart';
+import '../../screens/add_task_screen.dart';
+import '../../screens/calendar_screen.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});

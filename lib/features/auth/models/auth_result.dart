@@ -1,0 +1,1 @@
+enum AuthResult { loginSuccess, signupSuccess }

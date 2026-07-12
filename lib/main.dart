@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:levelup_app/screens/splash_screen.dart';
-import 'services/hive_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-void main() async {
+import 'core/config/env.dart';
+import 'screens/splash_screen.dart';
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await HiveService.init();
+  await dotenv.load(fileName: ".env");
 
-  final meta = HiveService.metaBox;
-
-  if (meta.get('currentDay') == null) {
-    meta.put('currentDay', DateTime.now().toIso8601String());
-  }
+  await Supabase.initialize(
+    url: Env.supabaseUrl,
+    publishableKey: Env.supabasePublishableKey,
+  );
 
   runApp(const ProviderScope(child: MyApp()));
 }
