@@ -12,4 +12,21 @@ class SupabaseProfileRepository implements ProfileRepository {
 
     return response != null;
   }
+
+  @override
+  Future<void> createProfile({
+    required String displayName,
+    required String avatarSeed,
+  }) async {
+    final user = supabase.auth.currentUser;
+
+    if (user == null) {
+      throw Exception("User not authenticated.");
+    }
+
+    await supabase.rpc(
+      'complete_onboarding',
+      params: {'p_display_name': displayName, 'p_avatar_seed': avatarSeed},
+    );
+  }
 }
