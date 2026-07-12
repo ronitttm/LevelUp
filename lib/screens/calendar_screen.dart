@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../database/app_database.dart';
 import '../providers/database_provider.dart';
-import '../widgets/app_drawer.dart';
-import '../widgets/top_bar.dart';
+import '../widgets/common/app_drawer.dart';
+import '../widgets/common/top_bar.dart';
 import 'package:drift/drift.dart' hide Column;
 
 class CalendarScreen extends ConsumerStatefulWidget {
@@ -59,7 +59,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
       case "neutral":
       default:
-        return Colors.grey.shade300;
+        return Colors.grey;
     }
   }
 

@@ -11,11 +11,8 @@ class TopBar extends StatelessWidget implements PreferredSizeWidget {
       actions: const [
         Padding(
           padding: EdgeInsets.only(right: 12),
-          child: CircleAvatar(
-            radius: 16,
-            child: Icon(Icons.person, size: 18),
-          ),
-        )
+          child: CircleAvatar(radius: 16, child: Icon(Icons.person, size: 18)),
+        ),
       ],
     );
   }

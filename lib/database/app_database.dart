@@ -15,13 +15,21 @@ class Users extends Table {
 
 class Tasks extends Table {
   IntColumn get id => integer().autoIncrement()();
+
   TextColumn get title => text()();
+
   BoolColumn get isCompleted => boolean().withDefault(const Constant(false))();
-  IntColumn get points => integer().withDefault(const Constant(10))();
-  TextColumn get difficulty => text().withDefault(const Constant('medium'))();
+
+  TextColumn get difficulty => text().withDefault(const Constant('moderate'))();
+
+  TextColumn get reflection => text().nullable()();
+
   DateTimeColumn get createdAt => dateTime()();
+
   DateTimeColumn get appDay => dateTime()();
+
   DateTimeColumn get completedAt => dateTime().nullable()();
+
   BoolColumn get xpClaimed => boolean().withDefault(const Constant(false))();
 }
 
@@ -40,7 +48,7 @@ class DaySummaries extends Table {
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
   Future<User?> getUser() {
     return select(users).getSingleOrNull();
   }
