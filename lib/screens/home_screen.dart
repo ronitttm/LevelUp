@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:levelup_app/features/current_user/providers/current_user_provider.dart';
 import 'package:levelup_app/widgets/common/app_drawer.dart';
-import 'package:lottie/lottie.dart';
 
 import '../providers/task_provider.dart';
-import '../providers/user_provider.dart';
+
 import '../widgets/common/top_bar.dart';
 import 'add_task_screen.dart';
 
@@ -39,7 +39,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
       if (didAutoEnd && mounted) {
         ref.invalidate(taskProvider);
-        ref.invalidate(userProvider);
+        ref.invalidate(currentUserProvider);
 
         setState(() {});
 
@@ -53,17 +53,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final tasks = ref.watch(taskProvider);
-    final user = ref.watch(userProvider);
+    final currentUserAsync = ref.watch(currentUserProvider);
     final size = MediaQuery.of(context).size;
     final width = size.width;
     final height = size.height;
 
     final isSmall = width < 360;
     final isTablet = width > 700;
-
-    if (user == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
 
     final total = tasks.length;
     final completed = tasks.where((t) => t.isCompleted).length;
@@ -74,91 +70,107 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final currentDay = ref.read(taskProvider.notifier).getCurrentAppDay();
 
-    return Scaffold(
-      appBar: const TopBar(),
+    return currentUserAsync.when(
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
 
-      drawer: const AppDrawer(),
-      body: Stack(
-        children: [
-          Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: width * 0.04,
-              vertical: height * 0.015,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+      error: (error, stack) =>
+          Scaffold(body: Center(child: Text(error.toString()))),
+
+      data: (user) {
+        return Scaffold(
+          appBar: const TopBar(),
+
+          drawer: const AppDrawer(),
+          body: Stack(
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: width * 0.04,
+                  vertical: height * 0.015,
+                ),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    /// GREETING CARD
-                    Expanded(
-                      flex: 5,
-                      child: GreetingCard(
-                        userName: "Ronit", // or user.name if you add it later
-                        streak: user.streak,
-                        currentDay: currentDay,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        /// GREETING CARD
+                        Expanded(
+                          flex: 5,
+                          child: GreetingCard(
+                            userName: user
+                                .displayName, // or user.name if you add it later
+                            streak: user.currentStreak,
+                            currentDay: currentDay,
+                          ),
+                        ),
+
+                        SizedBox(width: width * 0.03),
+
+                        /// CAT CARD
+                        Expanded(flex: 4, child: MoodCard(mood: mood)),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    /// Level card
+                    XPCard(level: user.level, xp: user.xp),
+
+                    const SizedBox(height: 16),
+
+                    /// 📊 Daily Progress
+                    ProgressCard(
+                      progress: progress,
+                      completedTasks: completed,
+                      totalTasks: total,
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        "Tasks for Today",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
 
-                    SizedBox(width: width * 0.03),
+                    const SizedBox(height: 8),
 
-                    /// CAT CARD
-                    Expanded(flex: 4, child: MoodCard(mood: mood)),
+                    const Expanded(child: TaskList()),
+
+                    /// 🔘 Buttons
+                    BottomButtons(
+                      onAddTask: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AddTaskScreen(),
+                          ),
+                        );
+                      },
+
+                      onEndDay: () {
+                        showDialog(
+                          context: context,
+                          builder: (_) => const EndDayDialog(),
+                        );
+                      },
+                    ),
                   ],
                 ),
-                const SizedBox(height: 16),
+              ),
 
-                /// Level card
-                XPCard(level: user.level, xp: user.xp),
-
-                const SizedBox(height: 16),
-
-                /// 📊 Daily Progress
-                ProgressCard(
-                  progress: progress,
-                  completedTasks: completed,
-                  totalTasks: total,
-                ),
-
-                const SizedBox(height: 12),
-
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    "Tasks for Today",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                const Expanded(child: TaskList()),
-
-                /// 🔘 Buttons
-                BottomButtons(
-                  onAddTask: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const AddTaskScreen()),
-                    );
-                  },
-
-                  onEndDay: () {
-                    showDialog(
-                      context: context,
-                      builder: (_) => const EndDayDialog(),
-                    );
-                  },
-                ),
-              ],
-            ),
+              /// celebration overlay
+              const CelebrationOverlay(),
+            ],
           ),
-
-          /// celebration overlay
-          const CelebrationOverlay(),
-        ],
-      ),
+        );
+      },
     );
   }
 }

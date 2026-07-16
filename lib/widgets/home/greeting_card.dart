@@ -112,8 +112,8 @@ class GreetingCard extends StatelessWidget {
                           child: Padding(
                             padding: const EdgeInsets.only(top: 8, right: 8),
                             child: SizedBox(
-                              width: 120,
-                              height: 120,
+                              width: 80,
+                              height: 80,
                               child: Lottie.asset(
                                 isNight
                                     ? "assets/animations/weather-night.json"
@@ -135,7 +135,7 @@ class GreetingCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    greeting,
+                    "Hello \n$userName!",
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: isSmall ? 20 : 20,
@@ -143,13 +143,13 @@ class GreetingCard extends StatelessWidget {
                     ),
                   ),
 
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 22),
 
                   Text(
                     subtitle,
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.9),
-                      fontSize: isSmall ? 15 : 15,
+                      fontSize: isSmall ? 12 : 12,
                       fontWeight: FontWeight.w500,
                     ),
                   ),

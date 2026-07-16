@@ -5,8 +5,6 @@ import '../database/app_database.dart';
 import '../services/celebration_service.dart';
 import 'database_provider.dart';
 import 'user_provider.dart';
-import 'celebration_provider.dart';
-import 'package:levelup_app/models/celebration_event.dart';
 
 import '../utils/task_utils.dart';
 
