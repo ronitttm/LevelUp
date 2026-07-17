@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:levelup_app/features/current_user/providers/current_user_provider.dart';
 
-import '../../database/app_database.dart';
-import '../../providers/task_provider.dart';
+import '../../features/tasks/models/task_model.dart';
+import '../../features/tasks/providers/task_provider.dart';
+
 import '../../utils/task_utils.dart';
-import '../common/reflection_field.dart';
 import '../common/difficulty_chips.dart';
+import '../common/reflection_field.dart';
 
 class SubmitTaskDialog extends ConsumerStatefulWidget {
-  final Task task;
+  final TaskModel task;
 
   const SubmitTaskDialog({super.key, required this.task});
 
@@ -31,7 +33,7 @@ class _SubmitTaskDialogState extends ConsumerState<SubmitTaskDialog> {
   Widget build(BuildContext context) {
     final difficulty = TaskUtils.fromString(widget.task.difficulty);
 
-    final xp = TaskUtils.getXP(difficulty);
+    final xp = widget.task.xpReward;
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -129,8 +131,13 @@ class _SubmitTaskDialogState extends ConsumerState<SubmitTaskDialog> {
                           });
 
                           await ref
-                              .read(taskProvider.notifier)
-                              .submitTask(widget.task, _controller.text.trim());
+                              .read(taskControllerProvider.notifier)
+                              .completeTask(
+                                taskId: widget.task.id,
+                                reflection: _controller.text.trim(),
+                              );
+
+                          ref.invalidate(currentUserProvider);
 
                           if (!mounted) return;
 

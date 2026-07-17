@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:levelup_app/core/supabase/supabase.dart';
 import 'package:lottie/lottie.dart';
 
 import '../models/task_difficulty.dart';
-import '../providers/task_provider.dart';
+import '../features/tasks/providers/task_provider.dart';
 import '../utils/task_utils.dart';
 import '../widgets/common/app_drawer.dart';
 import '../widgets/common/top_bar.dart';
 import '../widgets/common/difficulty_chips.dart';
-import '../extensions/task_extension.dart';
-import '../core/app_text.dart';
 
 class AddTaskScreen extends ConsumerStatefulWidget {
   const AddTaskScreen({super.key});
@@ -26,17 +25,18 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
 
   TaskDifficulty selectedDifficulty = TaskDifficulty.moderate;
 
-  final Set<int> triggeredHaptics = {};
+  final Set<String> triggeredHaptics = {};
 
   Future<void> addTask() async {
+    final user = supabase.auth.currentUser;
     final title = taskController.text.trim();
 
     if (title.isEmpty) return;
 
     await ref
-        .read(taskProvider.notifier)
-        .addTask(
-          title,
+        .read(taskControllerProvider.notifier)
+        .createTask(
+          title: title,
           difficulty: TaskUtils.toStringValue(selectedDifficulty),
         );
 
@@ -63,7 +63,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final tasks = ref.watch(taskProvider);
+    final tasksAsync = ref.watch(taskControllerProvider);
 
     final rewardXP = TaskUtils.getXP(selectedDifficulty);
 
@@ -251,8 +251,12 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
             const SizedBox(height: 8),
 
             Expanded(
-              child: tasks.isEmpty
-                  ? Container(
+              child: tasksAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (error, _) => Center(child: Text(error.toString())),
+                data: (tasks) {
+                  if (tasks.isEmpty) {
+                    return Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
                         color: Colors.grey.shade100,
@@ -277,141 +281,121 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
                           );
                         },
                       ),
-                    )
-                  : ListView.separated(
-                      physics: const BouncingScrollPhysics(),
+                    );
+                  }
 
-                      itemCount: tasks.length,
+                  return ListView.separated(
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: tasks.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final task = tasks[index];
 
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
-
-                      itemBuilder: (context, index) {
-                        final task = tasks[index];
-
-                        return Dismissible(
-                          key: ValueKey(task.id),
-
-                          direction: DismissDirection.endToStart,
-
-                          background: Container(
-                            alignment: Alignment.centerRight,
-
-                            padding: const EdgeInsets.only(right: 20),
-
-                            decoration: BoxDecoration(
-                              color: Colors.red.shade100,
-                              borderRadius: BorderRadius.circular(22),
+                      return Dismissible(
+                        key: ValueKey(task.id),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 20),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade100,
+                            borderRadius: BorderRadius.circular(22),
+                          ),
+                          child: SizedBox(
+                            height: 55,
+                            child: Lottie.asset(
+                              "assets/animations/delete.json",
+                              repeat: false,
                             ),
+                          ),
+                        ),
+                        onUpdate: (details) {
+                          if (details.progress > .20 &&
+                              !triggeredHaptics.contains(task.id)) {
+                            triggeredHaptics.add(task.id);
 
-                            child: SizedBox(
-                              height: 55,
-                              child: Lottie.asset(
-                                "assets/animations/delete.json",
-                                repeat: false,
+                            HapticFeedback.lightImpact();
+                          }
+                        },
+                        onDismissed: (_) {
+                          triggeredHaptics.remove(task.id);
+
+                          HapticFeedback.mediumImpact();
+
+                          ref
+                              .read(taskControllerProvider.notifier)
+                              .deleteTask(task.id);
+                        },
+                        child: Card(
+                          elevation: 2,
+                          shadowColor: Colors.black12,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 12,
+                            ),
+                            leading: CircleAvatar(
+                              backgroundColor: Colors.deepPurple.shade50,
+                              child: Icon(
+                                Icons.flag,
+                                color: Colors.deepPurple.shade700,
+                              ),
+                            ),
+                            title: Text(
+                              task.title,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                decoration: task.completed
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                              ),
+                            ),
+                            subtitle: Padding(
+                              padding: const EdgeInsets.only(top: 10),
+                              child: Row(
+                                children: [
+                                  DifficultyChip(
+                                    difficulty: TaskUtils.fromString(
+                                      task.difficulty,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 5,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.amber.shade100,
+                                      borderRadius: BorderRadius.circular(30),
+                                    ),
+                                    child: Text(
+                                      "⭐ +${task.xpReward}",
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  if (task.completed)
+                                    const Icon(
+                                      Icons.check_circle,
+                                      color: Colors.green,
+                                    ),
+                                ],
                               ),
                             ),
                           ),
-
-                          onUpdate: (details) {
-                            if (details.progress > .20 &&
-                                !triggeredHaptics.contains(task.id)) {
-                              triggeredHaptics.add(task.id);
-
-                              HapticFeedback.lightImpact();
-                            }
-                          },
-
-                          onDismissed: (_) {
-                            triggeredHaptics.remove(task.id);
-
-                            HapticFeedback.mediumImpact();
-
-                            ref
-                                .read(taskProvider.notifier)
-                                .deleteTaskById(task.id);
-                          },
-
-                          child: Card(
-                            elevation: 2,
-
-                            shadowColor: Colors.black12,
-
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 18,
-                                vertical: 12,
-                              ),
-
-                              leading: CircleAvatar(
-                                backgroundColor: Colors.deepPurple.shade50,
-
-                                child: Icon(
-                                  Icons.flag,
-                                  color: Colors.deepPurple.shade700,
-                                ),
-                              ),
-
-                              title: Text(
-                                task.title,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-
-                                  decoration: task.isCompleted
-                                      ? TextDecoration.lineThrough
-                                      : null,
-                                ),
-                              ),
-
-                              subtitle: Padding(
-                                padding: const EdgeInsets.only(top: 10),
-
-                                child: Row(
-                                  children: [
-                                    DifficultyChip(
-                                      difficulty: task.difficultyEnum,
-                                    ),
-
-                                    const SizedBox(width: 10),
-
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 5,
-                                      ),
-
-                                      decoration: BoxDecoration(
-                                        color: Colors.amber.shade100,
-                                        borderRadius: BorderRadius.circular(30),
-                                      ),
-
-                                      child: Text(
-                                        "⭐ +${task.xp}",
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ),
-
-                                    const Spacer(),
-
-                                    if (task.isCompleted)
-                                      const Icon(
-                                        Icons.check_circle,
-                                        color: Colors.green,
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           ],
         ),

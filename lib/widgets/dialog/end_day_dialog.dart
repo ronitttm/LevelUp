@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../providers/task_provider.dart';
-import '../../providers/user_provider.dart';
+import '../../features/tasks/providers/task_provider.dart';
 import '../../services/celebration_service.dart';
 
 class EndDayDialog extends ConsumerStatefulWidget {
@@ -20,19 +19,10 @@ class _EndDayDialogState extends ConsumerState<EndDayDialog> {
 
     setState(() => _loading = true);
 
-    final oldUser = ref.read(userProvider);
+    final result = await ref.read(taskControllerProvider.notifier).endDay();
 
-    final previousStreak = oldUser?.streak ?? 0;
-
-    await ref.read(taskProvider.notifier).endDay();
-
-    ref.invalidate(taskProvider);
-    ref.invalidate(userProvider);
-
-    final updatedUser = ref.read(userProvider);
-
-    if (updatedUser != null && updatedUser.streak > previousStreak) {
-      ref.read(celebrationServiceProvider).streak(updatedUser.streak);
+    if (result.streakIncreased) {
+      ref.read(celebrationServiceProvider).streak(result.currentStreak);
     }
 
     if (mounted) {

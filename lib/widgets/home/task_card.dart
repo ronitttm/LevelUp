@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:levelup_app/database/app_database.dart';
+import '../../features/tasks/models/task_model.dart';
 
 import '../../utils/task_utils.dart';
 import '../common/difficulty_chips.dart';
 import '../dialog/submit_task.dart';
 
 class TaskCard extends StatelessWidget {
-  final Task task;
+  final TaskModel task;
   final VoidCallback? onSubmitted;
 
   const TaskCard({super.key, required this.task, this.onSubmitted});
@@ -15,7 +15,7 @@ class TaskCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final difficulty = TaskUtils.fromString(task.difficulty);
 
-    final xp = TaskUtils.getXP(difficulty);
+    final xp = task.xpReward;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
@@ -25,14 +25,12 @@ class TaskCard extends StatelessWidget {
       padding: const EdgeInsets.all(18),
 
       decoration: BoxDecoration(
-        color: task.isCompleted ? Colors.green.shade50 : Colors.white,
+        color: task.completed ? Colors.green.shade50 : Colors.white,
 
         borderRadius: BorderRadius.circular(22),
 
         border: Border.all(
-          color: task.isCompleted
-              ? Colors.green.shade300
-              : Colors.grey.shade300,
+          color: task.completed ? Colors.green.shade300 : Colors.grey.shade300,
         ),
 
         boxShadow: [
@@ -51,8 +49,8 @@ class TaskCard extends StatelessWidget {
           Row(
             children: [
               Icon(
-                task.isCompleted ? Icons.check_circle : Icons.task_alt,
-                color: task.isCompleted ? Colors.green : Colors.deepPurple,
+                task.completed ? Icons.check_circle : Icons.task_alt,
+                color: task.completed ? Colors.green : Colors.deepPurple,
               ),
 
               const SizedBox(width: 10),
@@ -64,11 +62,11 @@ class TaskCard extends StatelessWidget {
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
 
-                    decoration: task.isCompleted
+                    decoration: task.completed
                         ? TextDecoration.lineThrough
                         : null,
 
-                    color: task.isCompleted ? Colors.grey : Colors.black,
+                    color: task.completed ? Colors.grey : Colors.black,
                   ),
                 ),
               ),
@@ -105,7 +103,7 @@ class TaskCard extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          if (task.isCompleted) ...[
+          if (task.completed) ...[
             if ((task.reflection ?? "").isNotEmpty) ...[
               const Text(
                 "Reflection",
