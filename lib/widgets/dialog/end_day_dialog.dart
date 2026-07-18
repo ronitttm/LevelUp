@@ -21,6 +21,20 @@ class _EndDayDialogState extends ConsumerState<EndDayDialog> {
 
     final result = await ref.read(taskControllerProvider.notifier).endDay();
 
+    if (!mounted) return;
+
+    if (result.noTasks) {
+      Navigator.pop(context);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("No tasks were added today. Nothing to end 😊"),
+        ),
+      );
+
+      return;
+    }
+
     if (result.streakIncreased) {
       ref.read(celebrationServiceProvider).streak(result.currentStreak);
     }

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:levelup_app/features/current_user/providers/current_user_provider.dart';
 import 'package:levelup_app/features/tasks/models/end_day_result.dart';
+import '../models/sync_user_day_result.dart';
 import 'package:levelup_app/features/tasks/providers/task_provider.dart';
 
 import '../models/task_model.dart';
@@ -62,15 +63,13 @@ class TaskController extends AsyncNotifier<List<TaskModel>> {
     return result;
   }
 
-  ///Auto end day
-  Future<bool> checkAndAutoEndDay() async {
-    final didAutoEnd = await _repository.checkAndAutoEndDay();
+  Future<SyncUserDayResult> syncUserDay() async {
+    final result = await _repository.syncUserDay();
 
-    if (didAutoEnd) {
-      ref.invalidate(currentUserProvider);
-      await refresh();
-    }
+    ref.invalidate(currentUserProvider);
 
-    return didAutoEnd;
+    await refresh();
+
+    return result;
   }
 }

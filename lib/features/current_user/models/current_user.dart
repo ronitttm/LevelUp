@@ -17,6 +17,8 @@ class CurrentUser {
 
   final DateTime? lastLogin;
 
+  final bool hasEndedToday;
+
   const CurrentUser({
     required this.id,
     required this.displayName,
@@ -27,6 +29,7 @@ class CurrentUser {
     required this.longestStreak,
     required this.coins,
     required this.lastLogin,
+    required this.hasEndedToday,
   });
 
   factory CurrentUser.fromMap(Map<String, dynamic> map) {
@@ -42,6 +45,7 @@ class CurrentUser {
       lastLogin: map['last_login'] == null
           ? null
           : DateTime.parse(map['last_login']),
+      hasEndedToday: map['has_ended_today'] ?? false,
     );
   }
 }

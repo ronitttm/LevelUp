@@ -6,6 +6,7 @@ class EndDayResult {
   final bool alreadyEndedToday;
   final int tasksCreated;
   final int longestStreak;
+  final bool noTasks;
 
   const EndDayResult({
     required this.streakIncreased,
@@ -15,6 +16,7 @@ class EndDayResult {
     required this.alreadyEndedToday,
     required this.tasksCreated,
     required this.longestStreak,
+    required this.noTasks,
   });
 
   factory EndDayResult.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,7 @@ class EndDayResult {
       xpEarned: json['xp_earned'],
       completedTasks: json['tasks_completed'],
       alreadyEndedToday: json['already_ended_today'],
+      noTasks: json['no_tasks'] ?? false,
     );
   }
 }

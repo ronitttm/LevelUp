@@ -33,19 +33,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final didAutoEnd = await ref
+      final result = await ref
           .read(taskControllerProvider.notifier)
-          .checkAndAutoEndDay();
+          .syncUserDay();
 
-      if (didAutoEnd && mounted) {
-        ref.invalidate(taskControllerProvider);
-        ref.invalidate(currentUserProvider);
+      if (!mounted) return;
 
-        setState(() {});
+      String? message;
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Previous day ended automatically 🌙")),
-        );
+      if (result.autoEnded && result.streakReset) {
+        message =
+            "🌙 Yesterday was automatically ended. 🔥 Your streak has been reset.";
+      } else if (result.autoEnded) {
+        message = "🌙 Yesterday was automatically ended.";
+      } else if (result.streakReset) {
+        message = "🔥 Your streak has been reset after missing several days.";
+      }
+
+      if (message != null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
       }
     });
   }
@@ -155,6 +163,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                         /// 🔘 Buttons
                         BottomButtons(
+                          hasEndedToday: user.hasEndedToday,
+
                           onAddTask: () {
                             Navigator.push(
                               context,

@@ -4,10 +4,14 @@ class BottomButtons extends StatelessWidget {
   final VoidCallback onAddTask;
   final VoidCallback onEndDay;
 
+  final bool hasEndedToday;
+
   const BottomButtons({
     super.key,
     required this.onAddTask,
     required this.onEndDay,
+
+    required this.hasEndedToday,
   });
 
   @override
@@ -16,7 +20,20 @@ class BottomButtons extends StatelessWidget {
       children: [
         Expanded(
           child: ElevatedButton.icon(
-            onPressed: onAddTask,
+            onPressed: () {
+              if (hasEndedToday) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      "You've already ended today. Check your Day Summary 📅",
+                    ),
+                  ),
+                );
+                return;
+              }
+
+              onAddTask();
+            },
             icon: const Icon(Icons.add),
             label: const Text("Add Task"),
           ),
@@ -26,7 +43,20 @@ class BottomButtons extends StatelessWidget {
 
         Expanded(
           child: ElevatedButton.icon(
-            onPressed: onEndDay,
+            onPressed: () {
+              if (hasEndedToday) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      "You've already ended today. Check your Day Summary 📅",
+                    ),
+                  ),
+                );
+                return;
+              }
+
+              onEndDay();
+            },
             icon: const Icon(Icons.nightlight_round),
             label: const Text("End Day"),
           ),

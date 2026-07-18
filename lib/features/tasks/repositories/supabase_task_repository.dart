@@ -1,4 +1,5 @@
 import 'package:levelup_app/features/tasks/models/end_day_result.dart';
+import 'package:levelup_app/features/tasks/models/sync_user_day_result.dart';
 
 import '../../../core/supabase/supabase.dart';
 
@@ -83,27 +84,9 @@ class SupabaseTaskRepository implements TaskRepository {
   }
 
   @override
-  Future<bool> checkAndAutoEndDay() async {
-    final today = DateTime.now();
+  Future<SyncUserDayResult> syncUserDay() async {
+    final response = await supabase.rpc('sync_user_day');
 
-    final yesterday = DateTime(
-      today.year,
-      today.month,
-      today.day,
-    ).subtract(const Duration(days: 1));
-
-    final summary = await supabase
-        .from('day_summaries')
-        .select('id')
-        .eq('date', yesterday.toIso8601String().split('T').first)
-        .maybeSingle();
-
-    if (summary != null) {
-      return false;
-    }
-
-    await endDay();
-
-    return true;
+    return SyncUserDayResult.fromJson(Map<String, dynamic>.from(response));
   }
 }
