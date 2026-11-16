@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:levelup_app/features/admin/screens/admin_screen.dart';
 import '../../screens/home_screen.dart';
 import '../../screens/add_task_screen.dart';
 import '../../screens/calendar_screen.dart';
 
-class AppDrawer extends StatelessWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:levelup_app/features/current_user/providers/current_user_provider.dart';
+
+class AppDrawer extends ConsumerWidget {
   const AppDrawer({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentUser = ref.watch(currentUserProvider).value;
     return Drawer(
       child: Column(
         children: [
@@ -59,6 +64,20 @@ class AppDrawer extends StatelessWidget {
               );
             },
           ),
+
+          if (currentUser?.isAdmin ?? false)
+            ListTile(
+              leading: const Icon(Icons.admin_panel_settings),
+              title: const Text("Admin Dashboard"),
+              onTap: () {
+                Navigator.pop(context);
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AdminScreen()),
+                );
+              },
+            ),
         ],
       ),
     );

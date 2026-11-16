@@ -1,6 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:levelup_app/features/current_user/providers/current_user_provider.dart';
+import 'package:levelup_app/features/startup/models/startup_model.dart';
+import 'package:levelup_app/features/startup/controllers/startup_controller.dart';
+import 'package:levelup_app/features/day_summaries/providers/summary_provider.dart';
+import 'package:levelup_app/features/tasks/providers/tasks_for_date_provider.dart';
 import 'package:levelup_app/widgets/common/app_drawer.dart';
 
 import '../features/tasks/providers/task_provider.dart';
@@ -21,41 +27,102 @@ import '../widgets/dialog/end_day_dialog.dart';
 import '../utils/mood_utils.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
-  const HomeScreen({super.key});
+  final StartupResult? startupResult;
+
+  const HomeScreen({super.key, this.startupResult});
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with WidgetsBindingObserver {
+  Timer? _dayTimer;
+  DateTime _syncedDay = DateUtils.dateOnly(DateTime.now());
+  bool _syncingDay = false;
+
   @override
   void initState() {
+    debugPrint("🏠 HomeScreen init: ${identityHashCode(this)}");
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _scheduleDayCheck();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final result = await ref
-          .read(taskControllerProvider.notifier)
-          .syncUserDay();
-
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      final result = widget.startupResult;
 
-      String? message;
-
-      if (result.autoEnded && result.streakReset) {
-        message =
-            "🌙 Yesterday was automatically ended. 🔥 Your streak has been reset.";
-      } else if (result.autoEnded) {
-        message = "🌙 Yesterday was automatically ended.";
-      } else if (result.streakReset) {
-        message = "🔥 Your streak has been reset after missing several days.";
-      }
-
-      if (message != null) {
+      if (result?.hasMessage ?? false) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(message)));
+        ).showSnackBar(SnackBar(content: Text(result!.message!)));
       }
     });
+  }
+
+  void _scheduleDayCheck([Duration? delay]) {
+    _dayTimer?.cancel();
+    final now = DateTime.now();
+    final nextDay = DateTime(now.year, now.month, now.day + 1);
+    final untilMidnight = nextDay.difference(now);
+    final nextCheck = untilMidnight < const Duration(minutes: 1)
+        ? untilMidnight
+        : const Duration(minutes: 1);
+    _dayTimer = Timer(delay ?? nextCheck, _checkDay);
+  }
+
+  Future<void> _checkDay() async {
+    if (_syncingDay || !mounted) return;
+    final today = DateUtils.dateOnly(DateTime.now());
+    if (today == _syncedDay) {
+      _scheduleDayCheck();
+      return;
+    }
+    _syncingDay = true;
+    try {
+      final result = await ref
+          .read(startupControllerProvider.notifier)
+          .initializeApp();
+      if (!mounted) return;
+      if (DateUtils.dateOnly(DateTime.now()) != today) {
+        _scheduleDayCheck(Duration.zero);
+        return;
+      }
+      _syncedDay = today;
+      ref.invalidate(currentUserProvider);
+      ref.invalidate(taskControllerProvider);
+      ref.invalidate(daySummaryControllerProvider);
+      ref.invalidate(tasksForDateProvider);
+      if (result.hasMessage) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(result.message!)));
+      }
+      _scheduleDayCheck();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not update the new day. Retrying shortly.'),
+          ),
+        );
+        _scheduleDayCheck(const Duration(minutes: 1));
+      }
+    } finally {
+      _syncingDay = false;
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _checkDay();
+  }
+
+  @override
+  void dispose() {
+    _dayTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   @override
@@ -66,8 +133,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final width = size.width;
     final height = size.height;
 
-    final isSmall = width < 360;
-    final isTablet = width > 700;
     final currentDay = DateTime(
       DateTime.now().year,
       DateTime.now().month,
@@ -159,12 +224,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                         const SizedBox(height: 8),
 
-                        const Expanded(child: TaskList()),
+                        Expanded(child: TaskList(tasks: tasks)),
 
                         /// 🔘 Buttons
                         BottomButtons(
                           hasEndedToday: user.hasEndedToday,
-
+                          hasTasksToday: tasks.isNotEmpty,
                           onAddTask: () {
                             Navigator.push(
                               context,

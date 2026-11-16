@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:levelup_app/features/current_user/providers/current_user_provider.dart';
 
 import '../../features/tasks/models/task_model.dart';
 import '../../features/tasks/providers/task_provider.dart';
@@ -22,6 +21,30 @@ class _SubmitTaskDialogState extends ConsumerState<SubmitTaskDialog> {
   final _controller = TextEditingController();
 
   bool _loading = false;
+
+  Future<void> _submit() async {
+    if (_loading) return;
+    setState(() => _loading = true);
+    try {
+      await ref
+          .read(taskControllerProvider.notifier)
+          .completeTask(
+            taskId: widget.task.id,
+            reflection: _controller.text.trim(),
+          );
+      if (mounted) Navigator.pop(context);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not submit the task. Please try again.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -50,7 +73,7 @@ class _SubmitTaskDialogState extends ConsumerState<SubmitTaskDialog> {
             children: [
               Center(
                 child: Text(
-                  "Submit Mission 🚀",
+                  "Submit Task 🚀",
                   style: Theme.of(
                     context,
                   ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
@@ -123,26 +146,7 @@ class _SubmitTaskDialogState extends ConsumerState<SubmitTaskDialog> {
                     ),
                   ),
 
-                  onPressed: _loading
-                      ? null
-                      : () async {
-                          setState(() {
-                            _loading = true;
-                          });
-
-                          await ref
-                              .read(taskControllerProvider.notifier)
-                              .completeTask(
-                                taskId: widget.task.id,
-                                reflection: _controller.text.trim(),
-                              );
-
-                          ref.invalidate(currentUserProvider);
-
-                          if (!mounted) return;
-
-                          Navigator.pop(context);
-                        },
+                  onPressed: _loading ? null : _submit,
 
                   child: _loading
                       ? const SizedBox(
@@ -154,7 +158,7 @@ class _SubmitTaskDialogState extends ConsumerState<SubmitTaskDialog> {
                           ),
                         )
                       : const Text(
-                          "Submit Mission",
+                          "Submit Task",
                           style: TextStyle(fontSize: 16),
                         ),
                 ),

@@ -1,1 +1,1 @@
-enum AuthResult { loginSuccess, signupSuccess }
+enum AuthResult { loginSuccess, signupSuccess, verificationRequired }

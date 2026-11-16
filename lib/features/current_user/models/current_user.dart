@@ -19,6 +19,12 @@ class CurrentUser {
 
   final bool hasEndedToday;
 
+  final String role;
+
+  bool get isAdmin => role == 'admin';
+
+  bool get isMember => role == 'member';
+
   const CurrentUser({
     required this.id,
     required this.displayName,
@@ -30,6 +36,7 @@ class CurrentUser {
     required this.coins,
     required this.lastLogin,
     required this.hasEndedToday,
+    required this.role,
   });
 
   factory CurrentUser.fromMap(Map<String, dynamic> map) {
@@ -45,7 +52,8 @@ class CurrentUser {
       lastLogin: map['last_login'] == null
           ? null
           : DateTime.parse(map['last_login']),
-      hasEndedToday: map['has_ended_today'] ?? false,
+      hasEndedToday: map['has_ended_today'],
+      role: map['role'] as String,
     );
   }
 }

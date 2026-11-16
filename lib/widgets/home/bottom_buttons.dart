@@ -6,12 +6,15 @@ class BottomButtons extends StatelessWidget {
 
   final bool hasEndedToday;
 
+  final bool hasTasksToday;
+
   const BottomButtons({
     super.key,
     required this.onAddTask,
     required this.onEndDay,
 
     required this.hasEndedToday,
+    required this.hasTasksToday,
   });
 
   @override
@@ -49,6 +52,17 @@ class BottomButtons extends StatelessWidget {
                   const SnackBar(
                     content: Text(
                       "You've already ended today. Check your Day Summary 📅",
+                    ),
+                  ),
+                );
+                return;
+              }
+
+              if (!hasTasksToday) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      "No tasks were added today. Nothing to end 😊",
                     ),
                   ),
                 );

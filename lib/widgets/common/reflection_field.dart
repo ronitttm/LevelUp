@@ -26,7 +26,7 @@ class ReflectionTextField extends StatelessWidget {
       decoration: InputDecoration(
         hintText:
             hintText ??
-            "How did today's mission go?\n"
+            "How did today's task go?\n"
                 "What did you learn?\n"
                 "Anything you'd do differently?",
 

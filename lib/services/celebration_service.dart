@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:levelup_app/models/celebration_factory.dart';
 
-import '../models/celebration_factory.dart';
 import '../providers/celebration_provider.dart';
 
 class CelebrationService {

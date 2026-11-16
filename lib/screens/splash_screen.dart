@@ -6,6 +6,13 @@ import '../features/auth/models/startup_destination.dart';
 import '../features/auth/providers/auth_controller.dart';
 import '../features/auth/screens/auth_screen.dart';
 import '../features/auth/screens/onboarding_screen.dart';
+
+import '../features/startup/controllers/startup_controller.dart';
+import '../features/startup/models/startup_model.dart';
+import '../features/current_user/providers/current_user_provider.dart';
+import '../features/day_summaries/providers/summary_provider.dart';
+import '../features/tasks/providers/task_provider.dart';
+import '../features/tasks/providers/tasks_for_date_provider.dart';
 import 'home_screen.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -21,8 +28,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   bool _animationFinished = false;
   bool _startupFinished = false;
+  bool _navigating = false;
 
   StartupDestination? _destination;
+  StartupResult? _startupResult;
+  bool _startupError = false;
 
   @override
   void initState() {
@@ -43,19 +53,39 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   }
 
   Future<void> _determineStartupDestination() async {
-    _destination = await ref
-        .read(authControllerProvider.notifier)
-        .determineStartupDestination();
+    if (!mounted) return;
+    setState(() => _startupError = false);
+    try {
+      _destination = await ref
+          .read(authControllerProvider.notifier)
+          .determineStartupDestination();
 
-    _startupFinished = true;
+      // Only sync if the user is actually going to Home
+      if (_destination == StartupDestination.home) {
+        _startupResult = await ref
+            .read(startupControllerProvider.notifier)
+            .initializeApp();
+        if (!mounted) return;
+        ref.invalidate(currentUserProvider);
+        ref.invalidate(taskControllerProvider);
+        ref.invalidate(daySummaryControllerProvider);
+        ref.invalidate(tasksForDateProvider);
+      }
 
-    _tryNavigate();
+      _startupFinished = true;
+
+      _tryNavigate();
+    } catch (_) {
+      if (mounted) setState(() => _startupError = true);
+    }
   }
 
   void _tryNavigate() {
+    if (_navigating) return;
     if (!_animationFinished) return;
     if (!_startupFinished) return;
     if (!mounted) return;
+    _navigating = true;
 
     Widget nextScreen;
 
@@ -69,10 +99,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         break;
 
       case StartupDestination.home:
-        nextScreen = const HomeScreen();
+        nextScreen = HomeScreen(startupResult: _startupResult);
         break;
     }
-
+    debugPrint("🚀 Navigating to Home");
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
@@ -114,19 +144,30 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
-        child: Lottie.asset(
-          "assets/animations/rocket.json",
-          controller: _controller,
-          repeat: false,
-          onLoaded: (composition) {
-            _controller.duration = Duration(
-              milliseconds: (composition.duration.inMilliseconds * 0.55)
-                  .toInt(),
-            );
+        child: _startupError
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Could not start LevelUp. Check your connection.'),
+                  TextButton(
+                    onPressed: _determineStartupDestination,
+                    child: const Text('Retry'),
+                  ),
+                ],
+              )
+            : Lottie.asset(
+                "assets/animations/rocket.json",
+                controller: _controller,
+                repeat: false,
+                onLoaded: (composition) {
+                  _controller.duration = Duration(
+                    milliseconds: (composition.duration.inMilliseconds * 0.55)
+                        .toInt(),
+                  );
 
-            _controller.forward();
-          },
-        ),
+                  _controller.forward();
+                },
+              ),
       ),
     );
   }

@@ -13,21 +13,26 @@ final authControllerProvider = AsyncNotifierProvider<AuthController, void>(
 );
 
 class AuthController extends AsyncNotifier<void> {
-  late final AuthRepository _authRepository;
-  late final ProfileRepository _profileRepository;
+  AuthRepository get _authRepository => ref.read(authRepositoryProvider);
+
+  ProfileRepository get _profileRepository =>
+      ref.read(profileRepositoryProvider);
 
   @override
   Future<void> build() async {
-    _authRepository = ref.read(authRepositoryProvider);
-    _profileRepository = ref.read(profileRepositoryProvider);
+    print("OnboardingController build");
+    // Repositories are accessed lazily via getters.
   }
 
   Future<void> signOut() async {
     state = const AsyncLoading();
-
-    state = await AsyncValue.guard(() async {
+    try {
       await _authRepository.signOut();
-    });
+      state = const AsyncData(null);
+    } catch (e, st) {
+      state = AsyncError(e, st);
+      rethrow;
+    }
   }
 
   Future<StartupDestination> determineStartupDestination() async {
@@ -61,9 +66,14 @@ class AuthController extends AsyncNotifier<void> {
           return AuthResult.loginSuccess;
 
         case AuthMode.signup:
-          await _authRepository.signUp(email: email, password: password);
+          final response = await _authRepository.signUp(
+            email: email,
+            password: password,
+          );
           state = const AsyncData(null);
-          return AuthResult.signupSuccess;
+          return response.session == null
+              ? AuthResult.verificationRequired
+              : AuthResult.signupSuccess;
       }
     } catch (e, st) {
       state = AsyncError(e, st);

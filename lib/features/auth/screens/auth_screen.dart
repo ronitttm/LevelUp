@@ -10,7 +10,7 @@ import '../models/startup_destination.dart';
 import '../providers/auth_controller.dart';
 
 import '../../auth/screens/onboarding_screen.dart';
-import '../../../screens/home_screen.dart';
+import '../../../screens/splash_screen.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
   const AuthScreen({super.key});
@@ -34,13 +34,15 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   bool _obscureConfirmPassword = true;
 
+  bool _submitting = false;
+
   bool get isLogin => _mode == AuthMode.login;
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
 
-    final isLoading = authState.isLoading;
+    final isLoading = authState.isLoading || _submitting;
 
     final size = MediaQuery.of(context).size;
 
@@ -131,11 +133,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                     ? Icons.visibility
                                     : Icons.visibility_off,
                               ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscurePassword = !_obscurePassword;
-                                });
-                              },
+                              onPressed: isLoading
+                                  ? null
+                                  : () {
+                                      setState(() {
+                                        _obscurePassword = !_obscurePassword;
+                                      });
+                                    },
                             ),
                           ),
                         ),
@@ -179,8 +183,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
                         const SizedBox(height: 20),
 
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             Text(
                               isLogin
@@ -189,13 +194,15 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                             ),
 
                             TextButton(
-                              onPressed: () {
-                                setState(() {
-                                  _mode = isLogin
-                                      ? AuthMode.signup
-                                      : AuthMode.login;
-                                });
-                              },
+                              onPressed: isLoading
+                                  ? null
+                                  : () {
+                                      setState(() {
+                                        _mode = isLogin
+                                            ? AuthMode.signup
+                                            : AuthMode.login;
+                                      });
+                                    },
                               child: Text(isLogin ? "Create one" : "Login"),
                             ),
                           ],
@@ -213,10 +220,12 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   }
 
   Future<void> _submit() async {
+    if (_submitting) return;
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
+    setState(() => _submitting = true);
     try {
       final result = await ref
           .read(authControllerProvider.notifier)
@@ -250,7 +259,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
             case StartupDestination.home:
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (_) => const HomeScreen()),
+                MaterialPageRoute(builder: (_) => const SplashScreen()),
               );
               break;
           }
@@ -261,6 +270,16 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => const OnboardingScreen()),
+          );
+          break;
+        case AuthResult.verificationRequired:
+          setState(() => _mode = AuthMode.login);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Check your email for a verification link, then sign in.',
+              ),
+            ),
           );
           break;
       }
@@ -282,6 +301,8 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
+    } finally {
+      if (mounted) setState(() => _submitting = false);
     }
   }
 

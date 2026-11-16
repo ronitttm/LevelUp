@@ -1,6 +1,4 @@
 import 'package:levelup_app/features/tasks/models/end_day_result.dart';
-import '../models/sync_user_day_result.dart';
-
 import '../models/task_model.dart';
 
 abstract class TaskRepository {
@@ -22,5 +20,5 @@ abstract class TaskRepository {
   /// End the current day
   Future<EndDayResult> endDay({DateTime? date});
 
-  Future<SyncUserDayResult> syncUserDay();
+  Future<List<TaskModel>> getTasksForDate(DateTime date);
 }

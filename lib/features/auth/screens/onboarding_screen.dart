@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../profile/providers/onboarding_controller.dart';
-import '../../../screens/home_screen.dart';
+import '../../../screens/splash_screen.dart';
 import '../../../core/utils/avatar_utils.dart';
 
 class OnboardingScreen extends ConsumerStatefulWidget {
@@ -58,7 +58,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Icon(Icons.auto_awesome, size: 60),
+            const Icon(Icons.rocket_launch_rounded, size: 60),
 
             const SizedBox(height: 20),
 
@@ -261,7 +261,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       if (!mounted) return;
 
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        MaterialPageRoute(builder: (_) => const SplashScreen()),
         (_) => false,
       );
     } catch (e) {

@@ -21,13 +21,13 @@ class EndDayResult {
 
   factory EndDayResult.fromJson(Map<String, dynamic> json) {
     return EndDayResult(
-      streakIncreased: json['streak_increased'],
-      tasksCreated: json['tasks_created'],
-      currentStreak: json['current_streak'],
-      longestStreak: json['longest_streak'],
-      xpEarned: json['xp_earned'],
-      completedTasks: json['tasks_completed'],
-      alreadyEndedToday: json['already_ended_today'],
+      streakIncreased: json['streak_increased'] ?? false,
+      currentStreak: json['current_streak'] ?? 0,
+      xpEarned: json['xp_earned'] ?? 0,
+      completedTasks: json['tasks_completed'] ?? 0,
+      alreadyEndedToday: json['already_ended_today'] ?? false,
+      tasksCreated: json['tasks_created'] ?? 0,
+      longestStreak: json['longest_streak'] ?? 0,
       noTasks: json['no_tasks'] ?? false,
     );
   }

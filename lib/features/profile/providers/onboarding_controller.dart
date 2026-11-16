@@ -5,19 +5,18 @@ import '../repositories/profile_repository.dart';
 import 'profile_repository_provider.dart';
 
 final onboardingControllerProvider =
-    NotifierProvider<OnboardingController, OnboardingState>(
+    NotifierProvider.autoDispose<OnboardingController, OnboardingState>(
       OnboardingController.new,
     );
 
-class OnboardingController extends Notifier<OnboardingState> {
-  late final ProfileRepository _repository;
+class OnboardingController extends AutoDisposeNotifier<OnboardingState> {
+  ProfileRepository get _repository => ref.read(profileRepositoryProvider);
 
   final _uuid = const Uuid();
 
   @override
   OnboardingState build() {
-    _repository = ref.read(profileRepositoryProvider);
-
+    print("OnboardingController build");
     return OnboardingState(
       avatarSeeds: _generateAvatarSeeds(),
       selectedAvatarSeed: null,

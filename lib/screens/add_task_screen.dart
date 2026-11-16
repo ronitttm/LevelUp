@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:levelup_app/core/supabase/supabase.dart';
+import 'package:levelup_app/features/current_user/providers/current_user_provider.dart';
 import 'package:lottie/lottie.dart';
 
 import '../models/task_difficulty.dart';
@@ -22,37 +22,65 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
   final TextEditingController taskController = TextEditingController();
 
   bool showSuccess = false;
+  bool _adding = false;
 
   TaskDifficulty selectedDifficulty = TaskDifficulty.moderate;
 
   final Set<String> triggeredHaptics = {};
 
   Future<void> addTask() async {
-    final user = supabase.auth.currentUser;
+    if (_adding) return;
+    final currentUser = ref.read(currentUserProvider).value;
+    final hasEndedToday = currentUser?.hasEndedToday ?? false;
+    if (hasEndedToday) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "You've already ended your day. Come back tomorrow to create new tasks! 🚀",
+          ),
+        ),
+      );
+      return;
+    }
+
     final title = taskController.text.trim();
 
     if (title.isEmpty) return;
 
-    await ref
-        .read(taskControllerProvider.notifier)
-        .createTask(
-          title: title,
-          difficulty: TaskUtils.toStringValue(selectedDifficulty),
+    setState(() => _adding = true);
+    try {
+      await ref
+          .read(taskControllerProvider.notifier)
+          .createTask(
+            title: title,
+            difficulty: TaskUtils.toStringValue(selectedDifficulty),
+          );
+
+      if (!mounted) return;
+      setState(() {
+        showSuccess = true;
+      });
+
+      await Future.delayed(const Duration(seconds: 2));
+
+      if (!mounted) return;
+
+      setState(() {
+        showSuccess = false;
+        taskController.clear();
+        selectedDifficulty = TaskDifficulty.moderate;
+      });
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not create the task. Please try again.'),
+          ),
         );
-
-    setState(() {
-      showSuccess = true;
-    });
-
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (!mounted) return;
-
-    setState(() {
-      showSuccess = false;
-      taskController.clear();
-      selectedDifficulty = TaskDifficulty.moderate;
-    });
+      }
+    } finally {
+      if (mounted) setState(() => _adding = false);
+    }
   }
 
   @override
@@ -63,6 +91,8 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = ref.watch(currentUserProvider).value;
+    final hasEndedToday = currentUser?.hasEndedToday ?? false;
     final tasksAsync = ref.watch(taskControllerProvider);
 
     final rewardXP = TaskUtils.getXP(selectedDifficulty);
@@ -80,7 +110,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
           children: [
             /// PAGE TITLE
             Text(
-              "Create Mission 🚀",
+              "Create Task 🚀",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
 
@@ -99,10 +129,11 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
                 Expanded(
                   child: TextField(
                     controller: taskController,
+                    enabled: !_adding,
                     textCapitalization: TextCapitalization.sentences,
                     onSubmitted: (_) => addTask(),
                     decoration: InputDecoration(
-                      hintText: "Mission name",
+                      hintText: "Task name",
                       prefixIcon: const Icon(Icons.flag),
                       filled: true,
                       fillColor: Colors.deepPurple.shade100,
@@ -132,7 +163,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
                           )
                         : ElevatedButton(
                             key: const ValueKey("button"),
-                            onPressed: addTask,
+                            onPressed: _adding ? null : addTask,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.deepPurple,
                               foregroundColor: Colors.white,
@@ -173,13 +204,15 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
                         ),
                       ),
                       selected: selectedDifficulty == difficulty,
-                      onSelected: (_) {
-                        HapticFeedback.selectionClick();
+                      onSelected: _adding
+                          ? null
+                          : (_) {
+                              HapticFeedback.selectionClick();
 
-                        setState(() {
-                          selectedDifficulty = difficulty;
-                        });
-                      },
+                              setState(() {
+                                selectedDifficulty = difficulty;
+                              });
+                            },
                     ),
                   ),
                 );
@@ -215,7 +248,7 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
 
                     children: [
                       const Text(
-                        "Mission Reward",
+                        "Task Reward",
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -239,12 +272,12 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
             const SizedBox(height: 15),
 
             const Text(
-              "Today's Missions",
+              "Today's Tasks",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
 
             Text(
-              "Swipe left to delete a mission",
+              "Swipe left to delete a task",
               style: TextStyle(color: Colors.grey.shade600),
             ),
 
@@ -317,14 +350,41 @@ class _AddTaskScreenState extends ConsumerState<AddTaskScreen> {
                             HapticFeedback.lightImpact();
                           }
                         },
-                        onDismissed: (_) {
-                          triggeredHaptics.remove(task.id);
+                        confirmDismiss: (_) async {
+                          if (hasEndedToday) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  "You've already ended your day. Tasks can no longer be deleted.",
+                                ),
+                              ),
+                            );
 
+                            return false;
+                          }
+
+                          return true;
+                        },
+
+                        onDismissed: (_) async {
+                          triggeredHaptics.remove(task.id);
                           HapticFeedback.mediumImpact();
 
-                          ref
-                              .read(taskControllerProvider.notifier)
-                              .deleteTask(task.id);
+                          try {
+                            await ref
+                                .read(taskControllerProvider.notifier)
+                                .deleteTask(task.id);
+                          } catch (_) {
+                            if (!mounted) return;
+                            ref.invalidate(taskControllerProvider);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Could not delete the task.'),
+                                ),
+                              );
+                            }
+                          }
                         },
                         child: Card(
                           elevation: 2,

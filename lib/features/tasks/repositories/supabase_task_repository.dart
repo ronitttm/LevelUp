@@ -1,5 +1,6 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:levelup_app/features/tasks/models/end_day_result.dart';
-import 'package:levelup_app/features/tasks/models/sync_user_day_result.dart';
 
 import '../../../core/supabase/supabase.dart';
 
@@ -9,6 +10,7 @@ import 'task_repository.dart';
 class SupabaseTaskRepository implements TaskRepository {
   @override
   Future<List<TaskModel>> getTasks() async {
+    debugPrint("🔥 API -> getTasks");
     final user = supabase.auth.currentUser;
 
     if (user == null) {
@@ -39,6 +41,7 @@ class SupabaseTaskRepository implements TaskRepository {
     required String title,
     required String difficulty,
   }) async {
+    debugPrint("🔥 API -> Create task");
     final user = supabase.auth.currentUser;
     final today = DateTime.now();
 
@@ -60,6 +63,7 @@ class SupabaseTaskRepository implements TaskRepository {
     required String taskId,
     required String? reflection,
   }) async {
+    debugPrint("🔥 API -> complete task");
     await supabase.rpc(
       'complete_task',
       params: {'p_task_id': taskId, 'p_reflection': reflection},
@@ -68,11 +72,13 @@ class SupabaseTaskRepository implements TaskRepository {
 
   @override
   Future<void> deleteTask(String taskId) async {
+    debugPrint("🔥 API -> delete task");
     await supabase.from('tasks').update({'is_deleted': true}).eq('id', taskId);
   }
 
   @override
   Future<EndDayResult> endDay({DateTime? date}) async {
+    debugPrint("🔥 API -> end day");
     final targetDate = date ?? DateTime.now();
 
     final dateString =
@@ -84,9 +90,23 @@ class SupabaseTaskRepository implements TaskRepository {
   }
 
   @override
-  Future<SyncUserDayResult> syncUserDay() async {
-    final response = await supabase.rpc('sync_user_day');
+  Future<List<TaskModel>> getTasksForDate(DateTime date) async {
+    debugPrint("🔥 API -> get tasks for date");
 
-    return SyncUserDayResult.fromJson(Map<String, dynamic>.from(response));
+    final user = supabase.auth.currentUser;
+
+    if (user == null) {
+      throw Exception("User not authenticated.");
+    }
+
+    final result = await supabase
+        .from('tasks')
+        .select()
+        .eq('user_id', user.id)
+        .eq('task_date', DateFormat('yyyy-MM-dd').format(date))
+        .eq('is_deleted', false)
+        .order('created_at');
+
+    return result.map((e) => TaskModel.fromJson(e)).toList();
   }
 }

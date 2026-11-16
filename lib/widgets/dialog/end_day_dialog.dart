@@ -19,28 +19,46 @@ class _EndDayDialogState extends ConsumerState<EndDayDialog> {
 
     setState(() => _loading = true);
 
-    final result = await ref.read(taskControllerProvider.notifier).endDay();
+    try {
+      final result = await ref.read(taskControllerProvider.notifier).endDay();
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    if (result.noTasks) {
-      Navigator.pop(context);
+      ///fallback api call to check if user ends a day without having created a single task
+      if (result.noTasks || result.alreadyEndedToday) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              result.noTasks
+                  ? "No tasks were added today. Nothing to end 😊"
+                  : "You've already ended today.",
+            ),
+          ),
+        );
+        Navigator.pop(context);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("No tasks were added today. Nothing to end 😊"),
-        ),
-      );
+        return;
+      }
 
-      return;
-    }
+      if (result.streakIncreased) {
+        ref.read(celebrationServiceProvider).streak(result.currentStreak);
+      }
 
-    if (result.streakIncreased) {
-      ref.read(celebrationServiceProvider).streak(result.currentStreak);
-    }
-
-    if (mounted) {
-      Navigator.pop(context);
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Could not end the day. Please check your connection.',
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 

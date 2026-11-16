@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:levelup_app/features/day_summaries/models/day_summary_model.dart';
+import 'package:levelup_app/features/day_summaries/providers/summary_provider.dart';
+import 'package:levelup_app/features/current_user/providers/current_user_provider.dart';
+import 'package:levelup_app/features/day_summaries/widgets/day_summary_dialog.dart';
 
-import '../database/app_database.dart';
-import '../providers/database_provider.dart';
 import '../widgets/common/app_drawer.dart';
 import '../widgets/common/top_bar.dart';
-import 'package:drift/drift.dart' hide Column;
 
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
@@ -73,916 +74,388 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     }
   }
 
-  String getMoodLabel(String mood) {
-    switch (mood) {
-      case "great":
-        return "Great 😄";
-
-      case "good":
-        return "Good 🙂";
-
-      case "sad":
-        return "Sad 😞";
-
-      case "neutral":
-      default:
-        return "Neutral 😐";
-    }
-  }
-
-  Widget statCard(String title, String value) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20),
-
-      decoration: BoxDecoration(
-        color: Colors.deepPurple.shade50,
-        borderRadius: BorderRadius.circular(22),
-      ),
-
-      child: Column(
-        children: [
-          Text(title, style: const TextStyle(fontSize: 18)),
-
-          const SizedBox(height: 8),
-
-          Text(
-            value,
-
-            style: const TextStyle(
-              fontSize: 34,
-              fontWeight: FontWeight.bold,
-              color: Colors.deepPurple,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final db = ref.read(databaseProvider);
+    final currentUserAsync = ref.watch(currentUserProvider);
+    final summariesAsync = ref.watch(daySummaryControllerProvider);
 
     final int daysInMonth = getDaysInMonth(selectedYear, selectedMonth);
 
-    return FutureBuilder<List<DaySummary>>(
-      future: db.select(db.daySummaries).get(),
+    return currentUserAsync.when(
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
 
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
+      error: (e, _) => Scaffold(body: Center(child: Text(e.toString()))),
 
-        final allHistory = snapshot.data!;
+      data: (user) {
+        return summariesAsync.when(
+          loading: () =>
+              const Scaffold(body: Center(child: CircularProgressIndicator())),
 
-        final filteredHistory = allHistory.where((history) {
-          return history.date.month == selectedMonth &&
-              history.date.year == selectedYear;
-        }).toList();
+          error: (e, _) => Scaffold(body: Center(child: Text(e.toString()))),
 
-        final Map<int, DaySummary> historyMap = {
-          for (var history in filteredHistory) history.date.day: history,
-        };
+          data: (allHistory) {
+            final filteredHistory = allHistory.where((history) {
+              return history.date.month == selectedMonth &&
+                  history.date.year == selectedYear;
+            }).toList();
 
-        /// longest streak
-        int longestStreak = 0;
-        int current = 0;
+            final Map<int, DaySummary> historyMap = {
+              for (var history in filteredHistory) history.date.day: history,
+            };
 
-        final sortedHistory = [...allHistory]
-          ..sort((a, b) => a.date.compareTo(b.date));
+            /// longest streak
 
-        for (final day in sortedHistory) {
-          if (day.completedTasks > 0) {
-            current++;
+            return Scaffold(
+              backgroundColor: const Color(0xFFF6F3FA),
 
-            if (current > longestStreak) {
-              longestStreak = current;
-            }
-          } else {
-            current = 0;
-          }
-        }
+              appBar: const TopBar(),
+              drawer: const AppDrawer(),
 
-        return Scaffold(
-          backgroundColor: const Color(0xFFF6F3FA),
+              body: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
 
-          appBar: const TopBar(),
-          drawer: const AppDrawer(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
 
-          body: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-
-                children: [
-                  /// HEADER
-                  const Text(
-                    "Mood Calendar",
-
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  /// MONTH + YEAR
-                  Row(
                     children: [
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                      /// HEADER
+                      const Text(
+                        "Mood Calendar",
 
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
 
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<int>(
-                              value: selectedMonth,
-                              isExpanded: true,
+                      const SizedBox(height: 18),
 
-                              items: List.generate(
-                                months.length,
-                                (index) => DropdownMenuItem(
-                                  value: index + 1,
-                                  child: Text(months[index]),
-                                ),
+                      /// MONTH + YEAR
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
                               ),
 
-                              onChanged: (value) {
-                                setState(() {
-                                  selectedMonth = value!;
-                                });
-                              },
-                            ),
-                          ),
-                        ),
-                      ),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
 
-                      const SizedBox(width: 12),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<int>(
+                                  value: selectedMonth,
+                                  isExpanded: true,
 
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14),
-
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<int>(
-                              value: selectedYear,
-                              isExpanded: true,
-
-                              items: years
-                                  .map(
-                                    (year) => DropdownMenuItem(
-                                      value: year,
-                                      child: Text(year.toString()),
+                                  items: List.generate(
+                                    months.length,
+                                    (index) => DropdownMenuItem(
+                                      value: index + 1,
+                                      child: Text(months[index]),
                                     ),
-                                  )
-                                  .toList(),
+                                  ),
 
-                              onChanged: (value) {
-                                setState(() {
-                                  selectedYear = value!;
-                                });
-                              },
+                                  onChanged: (value) {
+                                    setState(() {
+                                      selectedMonth = value!;
+                                    });
+                                  },
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
-                    ],
-                  ),
 
-                  const SizedBox(height: 20),
+                          const SizedBox(width: 12),
 
-                  /// CALENDAR
-                  Expanded(
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(14),
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                              ),
 
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(28),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
 
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<int>(
+                                  value: selectedYear,
+                                  isExpanded: true,
 
-                            blurRadius: 12,
-                            offset: const Offset(0, 6),
+                                  items: years
+                                      .map(
+                                        (year) => DropdownMenuItem(
+                                          value: year,
+                                          child: Text(year.toString()),
+                                        ),
+                                      )
+                                      .toList(),
+
+                                  onChanged: (value) {
+                                    setState(() {
+                                      selectedYear = value!;
+                                    });
+                                  },
+                                ),
+                              ),
+                            ),
                           ),
                         ],
                       ),
 
-                      child: Column(
-                        children: [
-                          Expanded(
-                            child: LayoutBuilder(
-                              builder: (context, constraints) {
-                                final width = constraints.maxWidth;
+                      const SizedBox(height: 20),
 
-                                final double aspectRatio = width < 380
-                                    ? 0.92
-                                    : width < 500
-                                    ? 1
-                                    : 1.1;
+                      /// CALENDAR
+                      Expanded(
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(14),
 
-                                return GridView.builder(
-                                  physics: const BouncingScrollPhysics(),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(28),
 
-                                  itemCount: daysInMonth,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
 
-                                  gridDelegate:
-                                      SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 7,
-                                        crossAxisSpacing: 10,
-                                        mainAxisSpacing: 10,
-                                        childAspectRatio: aspectRatio,
-                                      ),
+                                blurRadius: 12,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
 
-                                  itemBuilder: (context, index) {
-                                    final day = index + 1;
+                          child: Column(
+                            children: [
+                              Expanded(
+                                child: LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    final width = constraints.maxWidth;
 
-                                    final history = historyMap[day];
+                                    final double aspectRatio = width < 380
+                                        ? 0.92
+                                        : width < 500
+                                        ? 1
+                                        : 1.1;
 
-                                    final mood = history?.mood ?? "neutral";
+                                    return GridView.builder(
+                                      physics: const BouncingScrollPhysics(),
 
-                                    final bgColor = getMoodColor(mood);
+                                      itemCount: daysInMonth,
 
-                                    final appDay = DateTime.now();
-
-                                    final isToday =
-                                        selectedMonth == appDay.month &&
-                                        selectedYear == appDay.year &&
-                                        day == appDay.day;
-
-                                    final isStreakDay =
-                                        history != null &&
-                                        history.completedTasks > 0;
-
-                                    return GestureDetector(
-                                      onTap: () async {
-                                        if (history == null) {
-                                          return;
-                                        }
-
-                                        final selectedDate = DateTime(
-                                          selectedYear,
-                                          selectedMonth,
-                                          day,
-                                        );
-
-                                        final nextDay = selectedDate.add(
-                                          const Duration(days: 1),
-                                        );
-
-                                        final dayTasks =
-                                            await (db.select(db.tasks)..where(
-                                                  (tbl) =>
-                                                      tbl.appDay
-                                                          .isBiggerOrEqualValue(
-                                                            selectedDate,
-                                                          ) &
-                                                      tbl.appDay
-                                                          .isSmallerThanValue(
-                                                            nextDay,
-                                                          ),
-                                                ))
-                                                .get();
-
-                                        final totalTasks = dayTasks.length;
-
-                                        final completedTasks = dayTasks
-                                            .where((task) => task.isCompleted)
-                                            .length;
-
-                                        final completionPercentage =
-                                            totalTasks == 0
-                                            ? 0
-                                            : ((completedTasks / totalTasks) *
-                                                      100)
-                                                  .toInt();
-
-                                        if (!mounted) return;
-
-                                        showGeneralDialog(
-                                          context: context,
-                                          barrierDismissible: true,
-                                          barrierLabel: "Day Detail",
-                                          barrierColor: Colors.black54,
-                                          transitionDuration: const Duration(
-                                            milliseconds: 250,
+                                      gridDelegate:
+                                          SliverGridDelegateWithFixedCrossAxisCount(
+                                            crossAxisCount: 7,
+                                            crossAxisSpacing: 10,
+                                            mainAxisSpacing: 10,
+                                            childAspectRatio: aspectRatio,
                                           ),
 
-                                          pageBuilder: (_, __, ___) {
-                                            return Scaffold(
-                                              backgroundColor: Colors.black45,
-
-                                              body: Center(
-                                                child: Container(
-                                                  margin: const EdgeInsets.all(
-                                                    20,
-                                                  ),
-
-                                                  padding: const EdgeInsets.all(
-                                                    20,
-                                                  ),
-
-                                                  constraints:
-                                                      const BoxConstraints(
-                                                        maxWidth: 500,
-                                                        maxHeight: 760,
-                                                      ),
-
-                                                  decoration: BoxDecoration(
-                                                    color: Colors.white,
-
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          34,
-                                                        ),
-                                                  ),
-
-                                                  child: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-
-                                                    children: [
-                                                      /// HEADER
-                                                      Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .spaceBetween,
-
-                                                        children: [
-                                                          IconButton(
-                                                            onPressed: () {},
-
-                                                            icon: const Icon(
-                                                              Icons.menu,
-
-                                                              color: Colors
-                                                                  .deepPurple,
-
-                                                              size: 30,
-                                                            ),
-                                                          ),
-
-                                                          const Text(
-                                                            "Day Detail",
-
-                                                            style: TextStyle(
-                                                              fontSize: 24,
-
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-
-                                                              color: Colors
-                                                                  .deepPurple,
-                                                            ),
-                                                          ),
-
-                                                          CircleAvatar(
-                                                            backgroundColor:
-                                                                Colors
-                                                                    .deepPurple
-                                                                    .shade50,
-
-                                                            child: IconButton(
-                                                              onPressed: () =>
-                                                                  Navigator.pop(
-                                                                    context,
-                                                                  ),
-
-                                                              icon: const Icon(
-                                                                Icons.close,
-
-                                                                color: Colors
-                                                                    .deepPurple,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-
-                                                      const SizedBox(
-                                                        height: 20,
-                                                      ),
-
-                                                      /// DATE
-                                                      Center(
-                                                        child: Text(
-                                                          "$day ${months[selectedMonth - 1]} $selectedYear",
-
-                                                          style:
-                                                              const TextStyle(
-                                                                fontSize: 30,
-
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-
-                                                                color: Colors
-                                                                    .deepPurple,
-                                                              ),
-                                                        ),
-                                                      ),
-
-                                                      const SizedBox(
-                                                        height: 24,
-                                                      ),
-
-                                                      Divider(
-                                                        color: Colors
-                                                            .grey
-                                                            .shade300,
-                                                      ),
-
-                                                      const SizedBox(
-                                                        height: 18,
-                                                      ),
-
-                                                      /// STATS
-                                                      Row(
-                                                        children: [
-                                                          Expanded(
-                                                            child: statCard(
-                                                              "Total Tasks",
-
-                                                              "$totalTasks",
-                                                            ),
-                                                          ),
-
-                                                          const SizedBox(
-                                                            width: 14,
-                                                          ),
-
-                                                          Expanded(
-                                                            child: statCard(
-                                                              "Completed Tasks",
-
-                                                              "$completedTasks",
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-
-                                                      const SizedBox(
-                                                        height: 22,
-                                                      ),
-
-                                                      /// COMPLETION + MOOD
-                                                      Container(
-                                                        decoration: BoxDecoration(
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                24,
-                                                              ),
-
-                                                          border: Border.all(
-                                                            color: Colors
-                                                                .grey
-                                                                .shade300,
-                                                          ),
-                                                        ),
-
-                                                        child: Column(
-                                                          children: [
-                                                            Padding(
-                                                              padding:
-                                                                  const EdgeInsets.symmetric(
-                                                                    horizontal:
-                                                                        18,
-
-                                                                    vertical:
-                                                                        18,
-                                                                  ),
-
-                                                              child: Row(
-                                                                mainAxisAlignment:
-                                                                    MainAxisAlignment
-                                                                        .spaceBetween,
-
-                                                                children: [
-                                                                  const Text(
-                                                                    "Completion",
-
-                                                                    style: TextStyle(
-                                                                      fontSize:
-                                                                          18,
-                                                                    ),
-                                                                  ),
-
-                                                                  Text(
-                                                                    "$completionPercentage%",
-
-                                                                    style: const TextStyle(
-                                                                      fontSize:
-                                                                          18,
-
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .bold,
-
-                                                                      color: Colors
-                                                                          .deepPurple,
-                                                                    ),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            ),
-
-                                                            Divider(
-                                                              height: 1,
-
-                                                              color: Colors
-                                                                  .grey
-                                                                  .shade300,
-                                                            ),
-
-                                                            Padding(
-                                                              padding:
-                                                                  const EdgeInsets.symmetric(
-                                                                    horizontal:
-                                                                        18,
-
-                                                                    vertical:
-                                                                        18,
-                                                                  ),
-
-                                                              child: Row(
-                                                                mainAxisAlignment:
-                                                                    MainAxisAlignment
-                                                                        .spaceBetween,
-
-                                                                children: [
-                                                                  const Text(
-                                                                    "Mood",
-
-                                                                    style: TextStyle(
-                                                                      fontSize:
-                                                                          18,
-                                                                    ),
-                                                                  ),
-
-                                                                  Text(
-                                                                    getMoodLabel(
-                                                                      mood,
-                                                                    ),
-
-                                                                    style: const TextStyle(
-                                                                      fontSize:
-                                                                          18,
-
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .bold,
-
-                                                                      color: Colors
-                                                                          .deepPurple,
-                                                                    ),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-
-                                                      const SizedBox(
-                                                        height: 24,
-                                                      ),
-
-                                                      /// TASKS
-                                                      const Text(
-                                                        "Tasks",
-
-                                                        style: TextStyle(
-                                                          fontSize: 26,
-
-                                                          fontWeight:
-                                                              FontWeight.bold,
-
-                                                          color:
-                                                              Colors.deepPurple,
-                                                        ),
-                                                      ),
-
-                                                      const SizedBox(
-                                                        height: 14,
-                                                      ),
-
-                                                      Expanded(
-                                                        child: dayTasks.isEmpty
-                                                            ? const Center(
-                                                                child: Text(
-                                                                  "No tasks found",
-                                                                ),
-                                                              )
-                                                            : ListView.builder(
-                                                                itemCount:
-                                                                    dayTasks
-                                                                        .length,
-
-                                                                itemBuilder: (context, index) {
-                                                                  final task =
-                                                                      dayTasks[index];
-
-                                                                  return Container(
-                                                                    margin:
-                                                                        const EdgeInsets.only(
-                                                                          bottom:
-                                                                              14,
-                                                                        ),
-
-                                                                    padding: const EdgeInsets.symmetric(
-                                                                      horizontal:
-                                                                          14,
-
-                                                                      vertical:
-                                                                          8,
-                                                                    ),
-
-                                                                    decoration: BoxDecoration(
-                                                                      borderRadius:
-                                                                          BorderRadius.circular(
-                                                                            20,
-                                                                          ),
-
-                                                                      border: Border.all(
-                                                                        color: Colors
-                                                                            .grey
-                                                                            .shade300,
-                                                                      ),
-                                                                    ),
-
-                                                                    child: Row(
-                                                                      children: [
-                                                                        Checkbox(
-                                                                          value:
-                                                                              task.isCompleted,
-
-                                                                          onChanged:
-                                                                              null,
-
-                                                                          activeColor:
-                                                                              Colors.deepPurple,
-                                                                        ),
-
-                                                                        Expanded(
-                                                                          child: Text(
-                                                                            task.title,
-
-                                                                            style: TextStyle(
-                                                                              fontSize: 18,
-
-                                                                              decoration: task.isCompleted
-                                                                                  ? TextDecoration.lineThrough
-                                                                                  : null,
-                                                                            ),
-                                                                          ),
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                  );
-                                                                },
-                                                              ),
-                                                      ),
-
-                                                      const SizedBox(
-                                                        height: 18,
-                                                      ),
-
-                                                      /// XP
-                                                      Container(
-                                                        width: double.infinity,
-
-                                                        padding:
-                                                            const EdgeInsets.symmetric(
-                                                              horizontal: 18,
-
-                                                              vertical: 18,
-                                                            ),
-
-                                                        decoration: BoxDecoration(
-                                                          color: Colors
-                                                              .deepPurple
-                                                              .shade50,
-
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                22,
-                                                              ),
-                                                        ),
-
-                                                        child: Row(
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceBetween,
-
-                                                          children: [
-                                                            const Text(
-                                                              "Points earned :",
-
-                                                              style: TextStyle(
-                                                                fontSize: 22,
-
-                                                                color: Colors
-                                                                    .deepPurple,
-                                                              ),
-                                                            ),
-
-                                                            Text(
-                                                              "${history.xpEarned} XP",
-
-                                                              style: const TextStyle(
-                                                                fontSize: 22,
-
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-
-                                                                color: Colors
-                                                                    .deepPurple,
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
+                                      itemBuilder: (context, index) {
+                                        final day = index + 1;
+
+                                        final history = historyMap[day];
+
+                                        final mood = history?.mood ?? "neutral";
+
+                                        final bgColor = getMoodColor(mood);
+
+                                        final appDay = DateTime.now();
+
+                                        final isToday =
+                                            selectedMonth == appDay.month &&
+                                            selectedYear == appDay.year &&
+                                            day == appDay.day;
+
+                                        final isStreakDay =
+                                            history != null &&
+                                            history.tasksCompleted > 0;
+
+                                        return GestureDetector(
+                                          onTap: () async {
+                                            if (history == null) {
+                                              return;
+                                            }
+
+                                            if (!mounted) return;
+                                            showDialog(
+                                              context: context,
+                                              builder: (_) => DaySummaryDialog(
+                                                history: history,
+                                                months: months,
+                                                selectedDate: DateTime(
+                                                  selectedYear,
+                                                  selectedMonth,
+                                                  day,
                                                 ),
                                               ),
                                             );
                                           },
-                                        );
-                                      },
 
-                                      child: AnimatedContainer(
-                                        duration: const Duration(
-                                          milliseconds: 250,
-                                        ),
-
-                                        decoration: BoxDecoration(
-                                          color: bgColor,
-
-                                          borderRadius: BorderRadius.circular(
-                                            18,
-                                          ),
-
-                                          border: Border.all(
-                                            color: isToday
-                                                ? Colors.deepPurple
-                                                : isStreakDay
-                                                ? Colors.orange
-                                                : Colors.transparent,
-
-                                            width: isToday || isStreakDay
-                                                ? 3
-                                                : 0,
-                                          ),
-
-                                          boxShadow: [
-                                            if (isStreakDay)
-                                              BoxShadow(
-                                                color: Colors.orange.withValues(
-                                                  alpha: 0.30,
-                                                ),
-
-                                                blurRadius: 12,
-                                                spreadRadius: 1,
-                                              ),
-                                          ],
-                                        ),
-
-                                        child: Stack(
-                                          children: [
-                                            Center(
-                                              child: Text(
-                                                "$day",
-
-                                                style: TextStyle(
-                                                  color: getTextColor(mood),
-
-                                                  fontWeight: FontWeight.bold,
-
-                                                  fontSize: 16,
-                                                ),
-                                              ),
+                                          child: AnimatedContainer(
+                                            duration: const Duration(
+                                              milliseconds: 250,
                                             ),
 
-                                            if (isToday)
-                                              Positioned(
-                                                top: 6,
-                                                right: 6,
+                                            decoration: BoxDecoration(
+                                              color: bgColor,
 
-                                                child: Container(
-                                                  width: 8,
-                                                  height: 8,
+                                              borderRadius:
+                                                  BorderRadius.circular(18),
 
-                                                  decoration:
-                                                      const BoxDecoration(
-                                                        color:
-                                                            Colors.deepPurple,
+                                              border: Border.all(
+                                                color: isToday
+                                                    ? Colors.deepPurple
+                                                    : isStreakDay
+                                                    ? Colors.orange
+                                                    : Colors.transparent,
 
-                                                        shape: BoxShape.circle,
-                                                      ),
-                                                ),
+                                                width: isToday || isStreakDay
+                                                    ? 3
+                                                    : 0,
                                               ),
-                                          ],
-                                        ),
-                                      ),
+
+                                              boxShadow: [
+                                                if (isStreakDay)
+                                                  BoxShadow(
+                                                    color: Colors.orange
+                                                        .withValues(
+                                                          alpha: 0.30,
+                                                        ),
+
+                                                    blurRadius: 12,
+                                                    spreadRadius: 1,
+                                                  ),
+                                              ],
+                                            ),
+
+                                            child: Stack(
+                                              children: [
+                                                Center(
+                                                  child: Text(
+                                                    "$day",
+
+                                                    style: TextStyle(
+                                                      color: getTextColor(mood),
+
+                                                      fontWeight:
+                                                          FontWeight.bold,
+
+                                                      fontSize: 16,
+                                                    ),
+                                                  ),
+                                                ),
+
+                                                if (isToday)
+                                                  Positioned(
+                                                    top: 6,
+                                                    right: 6,
+
+                                                    child: Container(
+                                                      width: 8,
+                                                      height: 8,
+
+                                                      decoration:
+                                                          const BoxDecoration(
+                                                            color: Colors
+                                                                .deepPurple,
+
+                                                            shape:
+                                                                BoxShape.circle,
+                                                          ),
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      },
                                     );
                                   },
-                                );
-                              },
-                            ),
-                          ),
-
-                          const SizedBox(height: 16),
-
-                          /// LONGEST STREAK
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(18),
-
-                            decoration: BoxDecoration(
-                              color: Colors.deepPurple.shade50,
-
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-
-                            child: Text(
-                              "🔥 Longest streak maintained: $longestStreak days",
-
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
 
-                  const SizedBox(height: 18),
+                              const SizedBox(height: 16),
 
-                  /// LEGEND
-                  Container(
-                    padding: const EdgeInsets.all(16),
+                              /// LONGEST STREAK
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(18),
 
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(22),
-                    ),
+                                decoration: BoxDecoration(
+                                  color: Colors.deepPurple.shade50,
 
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
 
-                      children: [
-                        const Text(
-                          "Mood Scale",
+                                child: Text(
+                                  "🔥 Longest streak maintained: ${user.longestStreak} days",
 
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
+                      ),
 
-                        const SizedBox(height: 14),
+                      const SizedBox(height: 18),
 
-                        Wrap(
-                          spacing: 18,
-                          runSpacing: 12,
+                      /// LEGEND
+                      Container(
+                        padding: const EdgeInsets.all(16),
+
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(22),
+                        ),
+
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
 
                           children: [
-                            moodItem(Colors.green.shade700, "Great"),
+                            const Text(
+                              "Mood Scale",
 
-                            moodItem(Colors.green.shade300, "Good"),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
 
-                            moodItem(Colors.grey.shade400, "Neutral"),
+                            const SizedBox(height: 14),
 
-                            moodItem(Colors.red.shade400, "Sad"),
+                            Wrap(
+                              spacing: 18,
+                              runSpacing: 12,
+
+                              children: [
+                                moodItem(Colors.green.shade700, "Great"),
+
+                                moodItem(Colors.green.shade300, "Good"),
+
+                                moodItem(Colors.grey.shade400, "Neutral"),
+
+                                moodItem(Colors.red.shade400, "Sad"),
+                              ],
+                            ),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         );
       },
     );

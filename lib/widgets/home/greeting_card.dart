@@ -110,14 +110,14 @@ class GreetingCard extends StatelessWidget {
                       : Align(
                           alignment: Alignment.topRight,
                           child: Padding(
-                            padding: const EdgeInsets.only(top: 8, right: 8),
+                            padding: const EdgeInsets.only(),
                             child: SizedBox(
-                              width: 80,
-                              height: 80,
+                              width: 100,
+                              height: 100,
                               child: Lottie.asset(
                                 isNight
                                     ? "assets/animations/weather-night.json"
-                                    : "assets/animations/weather-day.json",
+                                    : "assets/animations/sunny.json",
                                 repeat: true,
                                 fit: BoxFit.contain,
                               ),

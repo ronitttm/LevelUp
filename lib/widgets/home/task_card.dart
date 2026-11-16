@@ -4,15 +4,17 @@ import '../../features/tasks/models/task_model.dart';
 import '../../utils/task_utils.dart';
 import '../common/difficulty_chips.dart';
 import '../dialog/submit_task.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/current_user/providers/current_user_provider.dart';
 
-class TaskCard extends StatelessWidget {
+class TaskCard extends ConsumerWidget {
   final TaskModel task;
   final VoidCallback? onSubmitted;
 
   const TaskCard({super.key, required this.task, this.onSubmitted});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final difficulty = TaskUtils.fromString(task.difficulty);
 
     final xp = task.xpReward;
@@ -164,9 +166,21 @@ class TaskCard extends StatelessWidget {
                 ),
 
                 onPressed: () async {
+                  final currentUser = ref.read(currentUserProvider).value;
+
+                  if (currentUser?.hasEndedToday ?? false) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          "You've already ended your day. Come back tomorrow for new tasks! 🚀",
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+
                   await showDialog(
                     context: context,
-
                     builder: (_) => SubmitTaskDialog(task: task),
                   );
 
