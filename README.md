@@ -1,7 +1,7 @@
 # 🚀 LevelUp App
 
 LevelUp is a gamified productivity and self-improvement mobile application built with Flutter.  
-The app helps users stay productive by turning daily tasks into an RPG-style leveling system with XP, streaks, moods, achievements, and calendar tracking.
+The app helps users stay productive by turning daily tasks into an RPG-style leveling system with XP, streaks, moods, and calendar tracking.
 
 ---
 
@@ -9,7 +9,8 @@ The app helps users stay productive by turning daily tasks into an RPG-style lev
 
 ## 📝 Daily Task Management
 - Add tasks for the day
-- Mark tasks as completed
+- Mark tasks as completed or delete them
+- Add an optional reflection when completing a task
 - Tasks support:
   - Difficulty levels
   - XP points
@@ -20,10 +21,10 @@ The app helps users stay productive by turning daily tasks into an RPG-style lev
 
 ## 🎮 Gamification System
 - Gain XP for completing tasks
-- Automatic leveling system
+- Level progression
 - Daily streak tracking
 - Longest streak tracking
-- Mood detection based on task completion
+- Mood based on task completion
 - Confetti celebration on completing all tasks
 
 ---
@@ -42,27 +43,39 @@ The app helps users stay productive by turning daily tasks into an RPG-style lev
 ---
 
 ## 📊 Daily Analytics
-Each completed day stores:
+End the day to record and review:
 - Total tasks
 - Completed tasks
 - Completion percentage
 - XP earned
 - Mood
-- Full task list
-- Completed/Incomplete task states
+- Streak progress
+- Task history and completion states
 
 ---
 
-## 💾 Local Database
-The app uses **Drift (SQLite)** for persistent local storage.
+## 👤 Accounts and Profiles
+- Sign up and sign in with email and password
+- Set a display name and choose an avatar during onboarding
+
+---
+
+## 🤝 Admin Task Assignment
+- Administrators can view and search members
+- Assign tasks to one or more members
+- Choose the task difficulty and date
+
+---
+
+## ☁️ Cloud Data
+The app uses **Supabase** for authentication and persistent application data.
 
 ### Stored Data
-- Tasks
+- Profiles and accounts
+- Tasks and reflections
 - Day summaries
-- XP progress
-- Levels
-- Streaks
-- Task completion history
+- XP progress and levels
+- Streaks and task completion history
 
 ---
 
@@ -75,8 +88,9 @@ The app uses **Drift (SQLite)** for persistent local storage.
 ## State Management
 - Riverpod
 
-## Local Database
-- Drift (SQLite)
+## Backend and Authentication
+- Supabase
+- PostgreSQL
 
 ## Animations
 - Lottie Animations
@@ -85,27 +99,17 @@ The app uses **Drift (SQLite)** for persistent local storage.
 
 # 📂 Project Structure
 
-```bash
+```text
 lib/
 │
-├── database/
-│   ├── app_database.dart
-│
-├── providers/
-│   ├── task_provider.dart
-│   ├── user_provider.dart
-│   ├── database_provider.dart
-│
-├── screens/
-│   ├── splash_screen.dart
-│   ├── home_screen.dart
-│   ├── calendar_screen.dart
-│   ├── add_task_screen.dart
-│
-├── widgets/
-│   ├── top_bar.dart
-│   ├── app_drawer.dart
-│
-├── services/
+├── core/          # Shared configuration, styling, and widgets
+├── features/      # Auth, profiles, tasks, summaries, and admin
+├── models/        # Shared models
+├── providers/     # Shared state
+├── screens/       # Home, calendar, task, and splash screens
+├── services/      # Celebration handling
+├── utils/         # Mood and task utilities
+├── widgets/       # Reusable UI components
 │
 └── main.dart
+```
