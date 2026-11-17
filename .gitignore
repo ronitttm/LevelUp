@@ -33,6 +33,12 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+dist-website/*.apk
+/dist-website/web-app/
+/dist-website/.firebaserc
+/dist-website/.firebase
+/dist-website/DEPLOY.md
+/dist-website/firebase.json
 
 # Symbolication related
 app.*.symbols
