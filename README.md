@@ -3,6 +3,7 @@
 LevelUp is a gamified productivity and self-improvement mobile application built with Flutter.  
 The app helps users stay productive by turning daily tasks into an RPG-style leveling system with XP, streaks, moods, and calendar tracking.
 
+Try it out: https://levelup-app-111.web.app
 ---
 
 # ✨ Features
