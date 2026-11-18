@@ -4,17 +4,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#30204f">
-  <link rel="apple-touch-icon" sizes="192x192" href="./web-app/icons/Icon-192.png?v=levelup-1">
-  <link rel="icon" type="image/png" href="./web-app/favicon.png">
+  <meta name="theme-color" content="#f9f5ef">
   <meta name="description"
     content="Build better days with LevelUp, the task tracker that turns progress into an adventure.">
+  <link rel="apple-touch-icon" sizes="192x192" href="./web-app/icons/Icon-192.png?v=levelup-1">
+  <link rel="icon" type="image/png" href="./web-app/favicon.png">
   <title>LevelUp — make every day count</title>
   <style>
     :root {
       color-scheme: light;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: #251a37;
+      color: #25183e;
       background: #f9f5ef;
     }
 
@@ -31,247 +31,395 @@
     }
 
     a:focus-visible {
-      outline: 3px solid #f2ad32;
+      outline: 3px solid #d69b14;
       outline-offset: 4px;
     }
 
     .wrap {
-      width: min(1100px, calc(100% - 40px));
+      width: min(1100px, calc(100% - 36px));
       margin: 0 auto;
     }
 
-    header {
+    .site-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 24px 0;
+      gap: 12px;
+      padding: 18px 0;
     }
 
     .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
       font-size: 1.2rem;
       font-weight: 850;
-      text-decoration: none;
-      letter-spacing: -.04em;
+      letter-spacing: -.06em;
     }
 
-    .brand span {
-      color: #8151cb;
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 35px;
+      height: 35px;
+      border-radius: 12px;
+      background: #6d3dc1;
+      color: #fff;
+      font-size: 1.1rem;
+    }
+
+    .brand-name span {
+      color: #7541c7;
     }
 
     .author {
       margin: 0;
-      padding: 8px 12px;
-      border: 1px solid #e6dcf2;
-      border-radius: 999px;
-      background: #f3edf9;
-      color: #655b70;
-      font-size: .8rem;
+      color: #6d6179;
+      font-size: .68rem;
+      text-align: right;
     }
 
     .author span {
-      color: #59339a;
-      font-weight: 700;
-    }
-
-
-    .header-link {
-      font-size: .9rem;
-      font-weight: 700;
-      text-decoration: none;
+      display: block;
+      color: #4f3478;
+      font-size: .75rem;
+      font-weight: 750;
     }
 
     .hero {
-      display: grid;
-      grid-template-columns: 1.1fr .9fr;
-      align-items: center;
-      gap: 56px;
-      padding: 46px 0 76px;
+      padding: 26px 0 48px;
+    }
+
+    .hero-copy {
+      text-align: center;
     }
 
     .eyebrow {
-      color: #7947be;
-      font-size: .75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      margin: 0;
+      color: #7142b8;
+      font-size: .68rem;
       font-weight: 800;
-      letter-spacing: .14em;
+      letter-spacing: .12em;
       text-transform: uppercase;
     }
 
+    .hero .eyebrow {
+      padding: 8px 12px;
+      border: 1px solid #e5d8fa;
+      border-radius: 999px;
+      background: #f1e9fc;
+    }
+
     h1 {
-      max-width: 650px;
-      margin: 16px 0 20px;
-      font-size: clamp(3rem, 7vw, 5.8rem);
+      margin: 18px auto 14px;
+      max-width: 630px;
+      font-size: clamp(2.8rem, 12vw, 5.7rem);
       line-height: .98;
       letter-spacing: -.065em;
     }
 
     h1 span {
-      color: #8151cb;
+      color: #7950ca;
     }
 
     .lead {
-      max-width: 520px;
-      color: #655b70;
-      font-size: 1.1rem;
-      line-height: 1.7;
+      max-width: 480px;
+      margin: 0 auto;
+      color: #675d75;
+      font-size: 1rem;
+      line-height: 1.65;
     }
 
     .actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 28px;
+      margin-top: 22px;
     }
 
     .button {
       display: inline-flex;
-      justify-content: center;
       align-items: center;
-      min-height: 52px;
+      justify-content: center;
+      gap: 10px;
+      min-height: 54px;
       padding: 14px 22px;
-      border: 1px solid #392458;
-      border-radius: 13px;
+      border: 1px solid transparent;
+      border-radius: 15px;
       font-weight: 750;
       text-decoration: none;
-    }
-
-    .primary {
-      color: white;
-      background: #392458;
-    }
-
-    .secondary {
-      background: white;
+      transition: transform .2s ease, box-shadow .2s ease;
     }
 
     .button:hover {
       transform: translateY(-2px);
     }
 
+    .primary {
+      color: #fff;
+      background: #422564;
+      box-shadow: 0 8px 20px rgba(66, 37, 100, .18);
+    }
+
+    .secondary {
+      color: #422564;
+      background: #f4effb;
+      border-color: #e4d8f1;
+    }
+
+    .hero .button {
+      min-width: 210px;
+    }
+
     .arrow {
       display: inline-block;
-      margin-left: 8px;
-      animation: bounce 1.2s ease-in-out infinite;
+      animation: bounce 1.4s ease-in-out infinite;
     }
 
     @keyframes bounce {
       50% {
-        transform: translateY(5px);
-      }
-    }
-
-    @media (prefers-reduced-motion: no-preference) {
-      html {
-        scroll-behavior: smooth;
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .arrow {
-        animation: none;
+        transform: translateY(4px);
       }
     }
 
     .hero-art {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 390px;
-      border-radius: 42px;
-      background: #f2e4cb;
-      overflow: hidden;
+      position: relative;
+      max-width: 420px;
+      margin: 30px auto 0;
+      padding: 24px 30px 15px;
+    }
+
+    .hero-art::before,
+    .hero-art::after {
+      position: absolute;
+      color: #aa84dc;
+      font-size: 1.3rem;
+      content: "✦";
+    }
+
+    .hero-art::before {
+      top: 20%;
+      left: 9%;
+    }
+
+    .hero-art::after {
+      right: 9%;
+      bottom: 27%;
     }
 
     .hero-art img {
-      width: 100%;
-      max-width: 470px;
+      position: relative;
       display: block;
-      mix-blend-mode: multiply;
+      width: min(100%, 300px);
+      height: auto;
+      margin: 0 auto;
+      border-radius: 24px;
     }
 
-    .perks {
+    .art-caption {
+      position: relative;
+      width: fit-content;
+      margin: 8px auto 0;
+      padding: 9px 14px;
+      border: 1px solid #eee6f5;
+      border-radius: 999px;
+      background: #fff;
+      color: #4b3470;
+      font-size: .75rem;
+      font-weight: 750;
+      box-shadow: 0 6px 20px rgba(64, 42, 91, .08);
+    }
+
+    .art-caption span {
+      margin-right: 5px;
+      color: #d68a13;
+    }
+
+    .section-heading {
+      margin: 12px 0 10px;
+      font-size: clamp(2rem, 7vw, 3.3rem);
+      line-height: 1.08;
+      letter-spacing: -.05em;
+    }
+
+    .section-heading span {
+      color: #7950ca;
+    }
+
+    .section-copy {
+      margin: 0;
+      color: #675d75;
+      font-size: .95rem;
+      line-height: 1.65;
+    }
+
+    .features {
+      padding: 12px 0 56px;
+    }
+
+    .features-intro {
+      margin-bottom: 22px;
+    }
+
+    .perk-list {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      padding-bottom: 70px;
+      gap: 10px;
     }
 
-    .perk,
-    .install-card {
-      background: white;
-      border: 1px solid #eee6f2;
+    .perk {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 18px;
+      border: 1px solid #ebe4f4;
       border-radius: 20px;
-      padding: 24px;
+      background: #fff;
+    }
+
+    .perk-icon {
+      display: grid;
+      flex: 0 0 42px;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      color: #7041b5;
+      background: #f0e8fc;
+      font-size: 1.1rem;
+      font-weight: 800;
+    }
+
+    .perk:nth-child(2) .perk-icon {
+      color: #986006;
+      background: #fff2d4;
+    }
+
+    .perk:nth-child(3) .perk-icon {
+      color: #32754e;
+      background: #e5f6ea;
     }
 
     .perk strong {
       display: block;
-      margin-bottom: 8px;
-    }
-
-    .perk p,
-    .install-card p,
-    .install-card li {
-      color: #655b70;
-      line-height: 1.6;
+      margin: 1px 0 4px;
+      font-size: .95rem;
     }
 
     .perk p {
       margin: 0;
-      font-size: .94rem;
+      color: #71687b;
+      font-size: .84rem;
+      line-height: 1.5;
     }
 
     .install {
-      padding: 64px 0 72px;
-      border-top: 1px solid #e8e0e8;
+      padding: 46px 0 56px;
+      border-top: 1px solid #e8e1f0;
+      scroll-margin-top: 20px;
     }
 
-    .install h2 {
-      margin: 10px 0 12px;
-      font-size: clamp(2rem, 4vw, 3rem);
-      letter-spacing: -.05em;
-    }
-
-    .install>p {
-      color: #655b70;
+    .install .section-copy {
+      max-width: 480px;
     }
 
     .cards {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 16px;
-      margin-top: 28px;
+      gap: 14px;
+      margin-top: 24px;
     }
 
-    .install-card h3 {
-      margin: 0 0 10px;
-      font-size: 1.3rem;
+    .install-card {
+      padding: 22px;
+      border: 1px solid #e9e1f1;
+      border-radius: 24px;
+      background: #fff;
+      box-shadow: 0 10px 30px rgba(54, 34, 76, .04);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      margin-bottom: 14px;
+    }
+
+    .platform-icon {
+      display: grid;
+      flex: 0 0 44px;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 15px;
+      color: #6a3ab1;
+      background: #f1e9fc;
+      font-size: 1.2rem;
+    }
+
+    .platform-icon svg {
+      width: 25px;
+      height: 25px;
+    }
+
+    .card-top h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      letter-spacing: -.025em;
+    }
+
+    .card-label {
+      margin: 3px 0 0;
+      color: #74697e;
+      font-size: .75rem;
+    }
+
+    .install-card>p,
+    .install-card li {
+      color: #675d75;
+      font-size: .88rem;
+      line-height: 1.6;
+    }
+
+    .install-card>p {
+      margin: 0 0 16px;
+    }
+
+    .install-card .button {
+      width: 100%;
     }
 
     .install-card ol {
-      padding-left: 20px;
+      margin: 0 0 18px;
+      padding-left: 22px;
     }
 
-    .note {
-      font-size: .85rem;
+    .install-card li+li {
+      margin-top: 5px;
+    }
+
+    .install-card .note {
+      margin: 16px 0 0;
+      color: #74697e;
+      font-size: .76rem;
     }
 
     .install-card .live-badge {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      margin: 0;
-      padding: 6px 12px;
+      gap: 7px;
+      margin: 14px 0 0;
+      padding: 6px 10px;
       border-radius: 999px;
-      background: #e2f5e8;
+      background: #e4f5e9;
       color: #176b37;
-      font-size: .8rem;
-      font-weight: 700;
+      font-size: .73rem;
+      font-weight: 750;
     }
 
     .live-badge::before {
       content: "";
-      width: 8px;
-      height: 8px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
       background: #228b4a;
       animation: live-pulse 1.5s ease-in-out infinite;
@@ -283,17 +431,11 @@
       }
     }
 
-    @media (prefers-reduced-motion: reduce) {
-      .live-badge::before {
-        animation: none;
-      }
-    }
-
     footer {
-      padding: 20px 0 30px;
-      border-top: 1px solid #e8e0e8;
+      padding: 22px 0 30px;
+      border-top: 1px solid #e8e1f0;
       color: #766c7e;
-      font-size: .85rem;
+      font-size: .75rem;
     }
 
     footer .wrap {
@@ -303,92 +445,200 @@
       gap: 8px 20px;
     }
 
-    @media (max-width: 700px) {
+    @media (max-width: 719px) {
       .hero {
-        grid-template-columns: 1fr;
-        gap: 30px;
-        padding: 30px 0 48px;
+        padding: 12px 0 24px;
+      }
+
+      .hero h1 {
+        margin: 12px auto 10px;
+      }
+
+      .hero .actions {
+        margin-top: 16px;
       }
 
       .hero-art {
-        min-height: 0;
-        max-height: 350px;
+        max-width: min(100%, 320px);
+        margin-top: 8px;
+        padding: 10px 20px 12px;
       }
 
       .hero-art img {
-        width: min(100%, 350px);
+        width: min(100%, 190px, 23svh);
+      }
+    }
+
+    @media (min-width: 720px) {
+      .site-header {
+        padding: 24px 0;
       }
 
-      .perks,
+      .hero {
+        display: grid;
+        grid-template-columns: 1.1fr .9fr;
+        align-items: center;
+        gap: 64px;
+        padding: 55px 0 90px;
+      }
+
+      .hero-copy {
+        text-align: left;
+      }
+
+      h1,
+      .lead {
+        margin-left: 0;
+      }
+
+      .hero-art {
+        width: 100%;
+        max-width: none;
+        margin: 0;
+        padding: 40px;
+      }
+
+      .hero-art img {
+        width: min(100%, 370px);
+      }
+
+      .features {
+        display: grid;
+        grid-template-columns: .8fr 1.2fr;
+        gap: 64px;
+        align-items: center;
+        padding-bottom: 90px;
+      }
+
+      .features-intro {
+        margin: 0;
+      }
+
       .cards {
-        grid-template-columns: 1fr;
-      }
-
-      .perks {
-        padding-bottom: 48px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
 
       .install {
-        padding: 48px 0;
+        padding: 70px 0 80px;
+      }
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      html {
+        scroll-behavior: smooth;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+
+      .arrow,
+      .live-badge::before {
+        animation: none;
+      }
+
+      .button {
+        transition: none;
       }
     }
   </style>
 </head>
 
 <body>
-  <header class="wrap">
-    <a class="brand" href="#top" aria-label="LevelUp home">level<span>up</span> ✦</a>
+  <header class="site-header wrap">
+    <a class="brand" href="#top" aria-label="LevelUp home"><span class="brand-mark" aria-hidden="true">✦</span><span
+        class="brand-name">level<span>up</span></span></a>
     <p class="author">Created by <span>Ronit Murpani</span></p>
   </header>
   <main id="top">
     <section class="hero wrap" aria-labelledby="hero-title">
-      <div>
-        <div class="eyebrow">A little progress goes a long way</div>
-        <h1 id="hero-title">Your day, <span>leveled up.</span></h1>
+      <div class="hero-copy">
+        <p class="eyebrow"><span aria-hidden="true">✦</span> A little progress goes a long way</p>
+        <h1 id="hero-title">Your day,<br><span>leveled up.</span></h1>
         <p class="lead">Turn your to-do list into an adventure. Complete tasks, earn XP, and build a streak worth
           celebrating.</p>
-        <div class="actions">
-          <a class="button primary" href="#install">Get LevelUp App <span class="arrow" aria-hidden="true">↓</span></a>
-        </div>
+        <div class="actions"><a class="button primary" href="#install">Get LevelUp <span class="arrow"
+              aria-hidden="true">↓</span></a></div>
       </div>
-      <div class="hero-art"><img src="./web-app/assets/assets/icons/icon.png" alt="LevelUp's cheerful cat mascot"
-          width="470" height="470"></div>
+      <div class="hero-art">
+        <img src="./web-app/assets/assets/icons/icon.png" alt="LevelUp's cheerful cat mascot giving a thumbs-up"
+          width="1254" height="1254">
+        <p class="art-caption"><span aria-hidden="true">✦</span> Your journey starts here</p>
+      </div>
     </section>
-    <section class="perks wrap" aria-label="Why LevelUp">
-      <div class="perk"><strong>✓ Make progress</strong>
-        <p>Break your day into manageable tasks and check them off as you go.</p>
+    <section class="features wrap" aria-labelledby="features-title">
+      <div class="features-intro">
+        <p class="eyebrow">Small steps, big energy</p>
+        <h2 class="section-heading" id="features-title">Make progress<br><span>feel good.</span></h2>
+        <p class="section-copy">A little motivation for whatever today looks like.</p>
       </div>
-      <div class="perk"><strong>✦ Earn your XP</strong>
-        <p>Turn small wins into levels, celebrations, and lasting momentum.</p>
-      </div>
-      <div class="perk"><strong>☀ Look back</strong>
-        <p>See your streaks and daily moods come together on your calendar.</p>
+      <div class="perk-list">
+        <div class="perk"><span class="perk-icon" aria-hidden="true">✓</span>
+          <div><strong>Make progress</strong>
+            <p>Break your day into manageable tasks and check them off as you go.</p>
+          </div>
+        </div>
+        <div class="perk"><span class="perk-icon" aria-hidden="true">✦</span>
+          <div><strong>Earn your XP</strong>
+            <p>Turn small wins into levels, celebrations, and lasting momentum.</p>
+          </div>
+        </div>
+        <div class="perk"><span class="perk-icon" aria-hidden="true">☀</span>
+          <div><strong>Look back</strong>
+            <p>See your streaks and daily moods come together on your calendar.</p>
+          </div>
+        </div>
       </div>
     </section>
     <section class="install wrap" id="install" aria-labelledby="install-title">
-      <div class="eyebrow">Choose your adventure</div>
-      <h2 id="install-title">Get started your way.</h2>
-      <p>Download the Android app or use LevelUp in your browser on iPhone and desktop.</p>
+      <p class="eyebrow">Choose your adventure</p>
+      <h2 class="section-heading" id="install-title">Ready to <span>level up?</span></h2>
+      <p class="section-copy">Pick your device and let’s make today a good one.</p>
       <div class="cards">
         <article class="install-card">
-          <h3>Android</h3>
+          <div class="card-top"><span class="platform-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="m7.5 4.5-1.4-2.3M16.5 4.5l1.4-2.3" stroke="currentColor" stroke-width="1.5"
+                  stroke-linecap="round" />
+                <path d="M4 11a8 8 0 0 1 16 0H4Z" fill="currentColor" />
+                <path
+                  d="M5 12h14v5a2 2 0 0 1-2 2h-1v2a1 1 0 0 1-2 0v-2h-4v2a1 1 0 0 1-2 0v-2H7a2 2 0 0 1-2-2v-5ZM2 12a1 1 0 0 1 2 0v5a1 1 0 0 1-2 0v-5ZM20 12a1 1 0 0 1 2 0v5a1 1 0 0 1-2 0v-5Z"
+                  fill="currentColor" />
+                <circle cx="8.5" cy="8" r=".75" fill="#f1e9fc" />
+                <circle cx="15.5" cy="8" r=".75" fill="#f1e9fc" />
+              </svg>
+            </span>
+            <div>
+              <h3>Android</h3>
+              <p class="card-label">Download the app</p>
+            </div>
+          </div>
           <p>Download the APK directly to your phone, then open it to install.</p>
           <a class="button primary"
-            href="https://github.com/ronitttm/LevelUp/releases/download/v1.0.0/levelup_v1.apk">Download
-            APK ↓</a>
+            href="https://github.com/ronitttm/LevelUp/releases/download/v1.0.0/levelup_v1.apk">Download APK <span
+              aria-hidden="true">↓</span></a>
           <p class="note">Android may ask you to allow “Install unknown apps” for your browser or file manager. Only
             install files you trust; review any Play Protect warning before proceeding. You can turn the permission off
             afterward.</p>
           <p class="live-badge">v1.0.0</p>
         </article>
         <article class="install-card">
-          <h3>iPhone &amp; desktop</h3>
-          <p>Open the web app in your browser. On iPhone, add it to your Home Screen:</p>
+          <div class="card-top"><span class="platform-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="5.5" y="1.5" width="13" height="21" rx="3" stroke="currentColor" stroke-width="1.8" />
+                <path d="M10 4h4M10 19.5h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+              </svg>
+            </span>
+            <div>
+              <h3>iPhone</h3>
+              <p class="card-label">Use the web app, best on phones and tablets</p>
+            </div>
+          </div>
+          <p>Open LevelUp in your browser. On iPhone, add it to your Home Screen:</p>
           <ol>
-            <li>Open the web app in Safari.</li>
+            <li>Open the web app</li>
             <li>Tap <strong>Share</strong>, then <strong>Add to Home Screen</strong>.</li>
           </ol>
-          <a class="button secondary" href="./web-app/index.html">Open web app ↗</a>
+          <a class="button secondary" href="./web-app/index.html">Open web app <span aria-hidden="true">↗</span></a>
           <p class="note">This is a web app, not an App Store download. An internet connection is needed for account and
             task data.</p>
         </article>
@@ -396,10 +646,7 @@
     </section>
   </main>
   <footer>
-    <div class="wrap">
-      <span>LevelUp · One task at a time.</span>
-      <span>© 2026 Ronit Murpani</span>
-    </div>
+    <div class="wrap"><span>LevelUp · One task at a time.</span><span>© 2026 Ronit Murpani</span></div>
   </footer>
 </body>
 
